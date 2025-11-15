@@ -3,7 +3,7 @@ from openai import OpenAI
 
 # 환경 변수에서 가져오기
 
-client = AzureOpenAI(
+client = OpenAI(
     api_key=os.getenv("AZURE_OPENAI_KEY"),
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
 )
