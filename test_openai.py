@@ -5,7 +5,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key=os.getenv("AZURE_OPENAI_KEY"),
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+    base_url=os.getenv("AZURE_OPENAI_ENDPOINT")
 )
 
 # 간단한 질문 보내기
