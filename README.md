@@ -48,7 +48,7 @@
   <tr>
     <td width="50%">
       <div align="center">
-        <img src="./assets/ui-ux/screen2.png" width="250"/>
+        <img src="./assets/ui-ux/screen7.png" width="250"/>
         <h4>1️⃣ AI 맞춤 매칭 엔진</h4>
         <p><strong>XGBoost 기반</strong> 최적의 환자-간병인 매칭</p>
         <small>• 4가지 성향 축 분석<br/>• 60% 성향 + 40% 간병 호환도<br/>• 88.65% 정확도</small>
@@ -56,7 +56,7 @@
     </td>
     <td width="50%">
       <div align="center">
-        <img src="./assets/ui-ux/screen3.png" width="250"/>
+        <img src="./assets/ui-ux/screen9.png" width="250"/>
         <h4>2️⃣ 스마트 일정 관리</h4>
         <p>자동 최적화 & 실시간 공유</p>
         <small>• 간병 공백 방지<br/>• 가족 구성원 공유<br/>• 모바일 앱 지원</small>
@@ -66,7 +66,7 @@
   <tr>
     <td width="50%">
       <div align="center">
-        <img src="./assets/ui-ux/screen4.png" width="250"/>
+        <img src="./assets/ui-ux/screen10.png" width="250"/>
         <h4>3️⃣ 약물 관리 시스템</h4>
         <p>스마트 복약 지도 자동화</p>
         <small>• 오진약 방지<br/>• 약물 상호작용 검사<br/>• 실시간 모니터링</small>
@@ -74,7 +74,7 @@
     </td>
     <td width="50%">
       <div align="center">
-        <img src="./assets/ui-ux/screen1.png" width="250"/>
+        <img src="./assets/ui-ux/screen8.png" width="250"/>
         <h4>4️⃣ 통합 대시보드</h4>
         <p>모든 정보 한눈에 보기</p>
         <small>• 건강 상태 추적<br/>• 간병 품질 관리<br/>• 가족 소통 공간</small>
