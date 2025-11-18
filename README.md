@@ -44,61 +44,44 @@
 
 ## 💡 **솔루션: 4개의 AI 기반 핵심 기능**
 
-### 1️⃣ **AI 맞춤 매칭 엔진**
-
-<div align="center">
-
-![Matching Screenshot](./assets/ui-ux/screen2.png)
-
-</div>
-
-**XGBoost 기반 머신러닝 알고리즘으로 최적의 환자-간병인 매칭**
-
-- 성향 점수 4가지 축(공감도, 인내심, 활동성, 자립도) 분석
-- 60% 성향 호환도 + 40% 간병 호환도 가중치 적용
-- **V3 모델: 88.65% 정확도 달성**
-
-### 2️⃣ **스마트 일정 관리**
-
-<div align="center">
-
-![Schedule Screenshot](./assets/ui-ux/screen3.png)
-
-</div>
-
-간병 일정을 자동으로 최적화하고 모든 가족 구성원과 실시간 공유
-
-- 자동 스케줄링으로 간병 공백 방지
-- 모바일 앱으로 언제 어디서나 확인
-- 실시간 위치 추적 (선택사항)
-
-### 3️⃣ **약물 관리 시스템**
-
-<div align="center">
-
-![Medication Screenshot](./assets/ui-ux/screen4.png)
-
-</div>
-
-오진약, 과다복용을 방지하는 스마트 약물 관리
-
-- 복약 지도 자동화
-- 약물 상호작용 검사
-- 실시간 복약 현황 모니터링
-
-### 4️⃣ **통합 대시보드**
-
-<div align="center">
-
-![Dashboard Screenshot](./assets/ui-ux/screen5.png)
-
-</div>
-
-모든 정보를 한눈에 보는 통합 관리 시스템
-
-- 환자 건강 상태 추적
-- 간병 품질 관리
-- 가족 소통 공간
+<table>
+  <tr>
+    <td width="50%">
+      <div align="center">
+        <img src="./assets/ui-ux/screen2.png" width="250"/>
+        <h4>1️⃣ AI 맞춤 매칭 엔진</h4>
+        <p><strong>XGBoost 기반</strong> 최적의 환자-간병인 매칭</p>
+        <small>• 4가지 성향 축 분석<br/>• 60% 성향 + 40% 간병 호환도<br/>• 88.65% 정확도</small>
+      </div>
+    </td>
+    <td width="50%">
+      <div align="center">
+        <img src="./assets/ui-ux/screen3.png" width="250"/>
+        <h4>2️⃣ 스마트 일정 관리</h4>
+        <p>자동 최적화 & 실시간 공유</p>
+        <small>• 간병 공백 방지<br/>• 가족 구성원 공유<br/>• 모바일 앱 지원</small>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <div align="center">
+        <img src="./assets/ui-ux/screen4.png" width="250"/>
+        <h4>3️⃣ 약물 관리 시스템</h4>
+        <p>스마트 복약 지도 자동화</p>
+        <small>• 오진약 방지<br/>• 약물 상호작용 검사<br/>• 실시간 모니터링</small>
+      </div>
+    </td>
+    <td width="50%">
+      <div align="center">
+        <img src="./assets/ui-ux/screen1.png" width="250"/>
+        <h4>4️⃣ 통합 대시보드</h4>
+        <p>모든 정보 한눈에 보기</p>
+        <small>• 건강 상태 추적<br/>• 간병 품질 관리<br/>• 가족 소통 공간</small>
+      </div>
+    </td>
+  </tr>
+</table>
 
 ---
 
