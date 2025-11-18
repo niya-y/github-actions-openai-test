@@ -74,7 +74,7 @@
     </td>
     <td width="50%">
       <div align="center">
-        <img src="./assets/ui-ux/screen8.png" width="250"/>
+        <img src="./assets/ui-ux/screen13.png" width="250"/>
         <h4>4️⃣ 통합 대시보드</h4>
         <p>모든 정보 한눈에 보기</p>
         <small>• 건강 상태 추적<br/>• 간병 품질 관리<br/>• 가족 소통 공간</small>
