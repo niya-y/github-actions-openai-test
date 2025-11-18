@@ -1,0 +1,28 @@
+{
+  "model_name": "xgboost",
+  "metrics": {
+    "model_name": "xgboost",
+    "rmse": 5.45,
+    "mae": 4.42,
+    "r2_score": 0.9508,
+    "accuracy_within_5": 63.5,
+    "accuracy_within_10": 94.5
+  },
+  "feature_columns": [
+    "empathy_diff",
+    "patience_diff",
+    "activity_diff",
+    "independence_diff",
+    "max_diff",
+    "avg_diff",
+    "empathy_diff_sq",
+    "patience_diff_sq",
+    "empathy_patience_interaction",
+    "patient_empathy",
+    "patient_patience",
+    "caregiver_empathy",
+    "caregiver_patience"
+  ],
+  "onnx_path": "best_model.onnx",
+  "timestamp": "2025-11-16T23:08:19.327140"
+}

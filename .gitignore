@@ -1,0 +1,87 @@
+# 개발 환경
+.claude/
+.venv/
+venv/
+env/
+ENV/
+
+# 파이썬
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 가상환경
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# 로그 파일
+*.log
+logs/
+
+# 대용량 파일
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# PDF 문서 (선택사항)
+# *.pdf
+
+# 임시 파일
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Node.js / npm
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+.eslintcache
+
+# 보안 (민감한 정보)
+*.pem
+*.key
+*.env
+secrets/
+credentials.json
+
+# OS 파일
+.DS_Store
+*.swp
+*.swo

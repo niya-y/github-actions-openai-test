@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BluedonuLab - Personality Analysis Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#136dec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101822",
+            "text-light": "#111418",
+            "text-dark": "#f0f2f4",
+            "card-light": "#ffffff",
+            "card-dark": "#1b2735",
+            "border-light": "#e5e7eb",
+            "border-dark": "#374151"
+          },
+          fontFamily: {
+            "display": ["Lexend", "Noto Sans KR", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="sticky top-0 z-10 flex flex-col bg-background-light dark:bg-background-dark">
+<!-- TopAppBar -->
+<div class="flex items-center p-4 justify-between border-b border-border-light dark:border-border-dark">
+<div class="flex size-12 shrink-0 items-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<h2 class="text-text-light dark:text-text-dark text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">나의 성향 분석 결과</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-text-light dark:text-text-dark gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+</div>
+<main class="flex-1 pb-28">
+<!-- Charts Grid -->
+<div class="grid grid-cols-2 gap-4 px-4 py-6">
+<!-- Empathy Chart -->
+<div class="flex flex-col gap-2 rounded-xl bg-card-light dark:bg-card-dark p-4 shadow-sm">
+<p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">공감도</p>
+<p class="text-primary tracking-light text-[32px] font-bold leading-tight truncate">85<span class="text-text-light/70 dark:text-text-dark/70 text-2xl font-medium">/100</span></p>
+<div class="flex min-h-[140px] items-center justify-center">
+<svg class="max-h-36" height="100%" viewbox="0 0 120 120" width="100%">
+<defs>
+<lineargradient id="empathyGradient" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#136dec;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#4DB6AC;stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+<polygon class="dark:fill-slate-700" fill="#f0f2f4" points="60,10 110,40 90,95 30,95 10,40"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 102.5,35.5 85,82.25 35,82.25 17.5,35.5" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 95,31 80,70 40,70 25,31" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon fill="url(#empathyGradient)" opacity="0.4" points="60,60 97.5,51.25 82.5,84.125 37.5,84.125 22.5,51.25"></polygon>
+<polygon fill="none" points="60,60 97.5,51.25 82.5,84.125 37.5,84.125 22.5,51.25" stroke="url(#empathyGradient)" stroke-width="2"></polygon>
+</svg>
+</div>
+</div>
+<!-- Activity Chart -->
+<div class="flex flex-col gap-2 rounded-xl bg-card-light dark:bg-card-dark p-4 shadow-sm">
+<p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">활동성</p>
+<p class="text-primary tracking-light text-[32px] font-bold leading-tight truncate">70<span class="text-text-light/70 dark:text-text-dark/70 text-2xl font-medium">/100</span></p>
+<div class="flex min-h-[140px] items-center justify-center">
+<svg class="max-h-36" height="100%" viewbox="0 0 120 120" width="100%">
+<polygon class="dark:fill-slate-700" fill="#f0f2f4" points="60,10 110,40 90,95 30,95 10,40"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 102.5,35.5 85,82.25 35,82.25 17.5,35.5" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 95,31 80,70 40,70 25,31" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon fill="url(#empathyGradient)" opacity="0.4" points="60,60 92.5,48.5 77.5,78.5 42.5,78.5 27.5,48.5"></polygon>
+<polygon fill="none" points="60,60 92.5,48.5 77.5,78.5 42.5,78.5 27.5,48.5" stroke="url(#empathyGradient)" stroke-width="2"></polygon>
+</svg>
+</div>
+</div>
+<!-- Patience Chart -->
+<div class="flex flex-col gap-2 rounded-xl bg-card-light dark:bg-card-dark p-4 shadow-sm">
+<p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">인내심</p>
+<p class="text-primary tracking-light text-[32px] font-bold leading-tight truncate">92<span class="text-text-light/70 dark:text-text-dark/70 text-2xl font-medium">/100</span></p>
+<div class="flex min-h-[140px] items-center justify-center">
+<svg class="max-h-36" height="100%" viewbox="0 0 120 120" width="100%">
+<polygon class="dark:fill-slate-700" fill="#f0f2f4" points="60,10 110,40 90,95 30,95 10,40"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 102.5,35.5 85,82.25 35,82.25 17.5,35.5" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 95,31 80,70 40,70 25,31" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon fill="url(#empathyGradient)" opacity="0.4" points="60,60 100.5,54.1 86.8,87.88 33.2,87.88 19.5,54.1"></polygon>
+<polygon fill="none" points="60,60 100.5,54.1 86.8,87.88 33.2,87.88 19.5,54.1" stroke="url(#empathyGradient)" stroke-width="2"></polygon>
+</svg>
+</div>
+</div>
+<!-- Independence Chart -->
+<div class="flex flex-col gap-2 rounded-xl bg-card-light dark:bg-card-dark p-4 shadow-sm">
+<p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">독립성</p>
+<p class="text-primary tracking-light text-[32px] font-bold leading-tight truncate">60<span class="text-text-light/70 dark:text-text-dark/70 text-2xl font-medium">/100</span></p>
+<div class="flex min-h-[140px] items-center justify-center">
+<svg class="max-h-36" height="100%" viewbox="0 0 120 120" width="100%">
+<polygon class="dark:fill-slate-700" fill="#f0f2f4" points="60,10 110,40 90,95 30,95 10,40"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 102.5,35.5 85,82.25 35,82.25 17.5,35.5" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon class="dark:stroke-slate-600" fill="none" points="60,10 95,31 80,70 40,70 25,31" stroke="#e5e7eb" stroke-width="1"></polygon>
+<polygon fill="url(#empathyGradient)" opacity="0.4" points="60,60 87.5,45.75 72.5,75.75 47.5,75.75 32.5,45.75"></polygon>
+<polygon fill="none" points="60,60 87.5,45.75 72.5,75.75 47.5,75.75 32.5,45.75" stroke="url(#empathyGradient)" stroke-width="2"></polygon>
+</svg>
+</div>
+</div>
+</div>
+<!-- Personality Summary Section -->
+<div class="mt-4 px-4">
+<div class="rounded-xl bg-card-light dark:bg-card-dark p-5 shadow-sm">
+<!-- SectionHeader -->
+<h3 class="text-text-light dark:text-text-dark text-lg font-bold leading-tight tracking-[-0.015em] pb-3">AI 성향 분석 요약</h3>
+<!-- Chips -->
+<div class="flex gap-2 pb-3 flex-wrap">
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary/20 dark:bg-primary/30 px-4">
+<p class="text-primary dark:text-sky-300 text-sm font-medium leading-normal">#공감 중심형</p>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary/20 dark:bg-primary/30 px-4">
+<p class="text-primary dark:text-sky-300 text-sm font-medium leading-normal">#차분함</p>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary/20 dark:bg-primary/30 px-4">
+<p class="text-primary dark:text-sky-300 text-sm font-medium leading-normal">#높은 인내심</p>
+</div>
+</div>
+<!-- BodyText -->
+<p class="text-text-light/90 dark:text-text-dark/90 text-base font-normal leading-relaxed pt-1">
+            사용자는 타인에 대한 깊은 공감 능력을 바탕으로 안정적이고 차분한 관계를 형성하는 데 강점을 보입니다. 이러한 성향은 돌봄 관계에서 신뢰를 구축하고 편안한 환경을 조성하는 데 긍정적인 영향을 미칠 것입니다.
+          </p>
+</div>
+</div>
+</main>
+<!-- Sticky Footer Button -->
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-t border-border-light dark:border-border-dark">
+<button class="w-full h-14 bg-primary text-white text-lg font-bold rounded-xl shadow-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
+        매칭된 간병인 찾기
+      </button>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BluedonuLab - 성향기반 간병인 매칭 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-blue-600">🏥 BluedonuLab</h1>
+        <div class="flex gap-4">
+            <button onclick="loadPage('welcome')" class="px-4 py-2 rounded hover:bg-gray-100">홈</button>
+            <button onclick="loadPage('test')" class="px-4 py-2 rounded hover:bg-gray-100">성향테스트</button>
+            <button onclick="loadPage('recommendations')" class="px-4 py-2 rounded hover:bg-gray-100">간병인 추천</button>
+            <button onclick="loadPage('dashboard')" class="px-4 py-2 rounded hover:bg-gray-100">매칭현황</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div id="mainContent" class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Welcome Page -->
+    <div id="welcomePage" class="page-content">
+        <div class="gradient-bg text-white rounded-lg p-12 mb-8">
+            <h2 class="text-4xl font-bold mb-4">BluedonuLab에 오신 것을 환영합니다</h2>
+            <p class="text-xl mb-8">AI 기반 성향 분석으로 최적의 간병인을 찾아드립니다</p>
+            <button onclick="loadPage('test')" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 text-lg">
+                시작하기 →
+            </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+            <div class="card-hover bg-white p-6 rounded-lg shadow">
+                <div class="text-3xl mb-3">📊</div>
+                <h3 class="text-xl font-bold mb-2">1000+ 간병인</h3>
+                <p class="text-gray-600">검증된 전문 간병인 풀</p>
+            </div>
+            <div class="card-hover bg-white p-6 rounded-lg shadow">
+                <div class="text-3xl mb-3">🎯</div>
+                <h3 class="text-xl font-bold mb-2">성향 매칭</h3>
+                <p class="text-gray-600">성격과 선호도 기반 추천</p>
+            </div>
+            <div class="card-hover bg-white p-6 rounded-lg shadow">
+                <div class="text-3xl mb-3">⚡</div>
+                <h3 class="text-xl font-bold mb-2">빠른 매칭</h3>
+                <p class="text-gray-600">24시간 내 간병인 배치</p>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-bold mb-4">📈 시스템 상태</h3>
+            <div id="systemStatus" class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-gray-50 rounded">
+                    <p class="text-gray-600">API 상태</p>
+                    <p id="apiStatusText" class="text-xl font-bold">확인 중...</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded">
+                    <p class="text-gray-600">데이터베이스</p>
+                    <p id="dbStatusText" class="text-xl font-bold">확인 중...</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded">
+                    <p class="text-gray-600">등록된 환자</p>
+                    <p id="patientCountText" class="text-xl font-bold">-</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded">
+                    <p class="text-gray-600">성향테스트 완료율</p>
+                    <p id="completionRateText" class="text-xl font-bold">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personality Test Page -->
+    <div id="testPage" class="page-content hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold mb-2">성향 테스트</h2>
+            <p class="text-gray-600 mb-8">당신의 성향을 파악하여 최적의 간병인을 찾아드립니다</p>
+
+            <!-- Progress Bar -->
+            <div class="mb-8">
+                <div class="flex justify-between mb-2">
+                    <span id="questionNum" class="font-bold">질문 1/12</span>
+                    <span id="progressPercent" class="text-gray-600">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Questions -->
+            <div id="questionContainer">
+                <!-- Questions will be loaded here -->
+            </div>
+
+            <!-- Test Result Summary -->
+            <div id="testResultSummary" class="hidden mt-8 p-6 bg-green-50 border-2 border-green-300 rounded-lg">
+                <h3 class="text-xl font-bold mb-4 text-green-700">✅ 테스트 완료!</h3>
+                <p id="resultMessage" class="text-gray-700 mb-4"></p>
+                <button onclick="loadPage('recommendations')" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">
+                    간병인 추천 보기 →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caregiver Recommendations Page -->
+    <div id="recommendationsPage" class="page-content hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg mb-8">
+            <h2 class="text-3xl font-bold mb-2">맞춤 간병인 추천</h2>
+            <p class="text-gray-600 mb-6">당신을 위해 엄선된 간병인들입니다</p>
+
+            <!-- Filters -->
+            <div class="flex gap-4 mb-8">
+                <select id="gradeFilter" onchange="filterRecommendations()" class="px-4 py-2 border rounded">
+                    <option value="">모든 등급</option>
+                    <option value="A">A 등급</option>
+                    <option value="B">B 등급</option>
+                    <option value="C">C 등급</option>
+                </select>
+                <input type="number" id="minScoreFilter" placeholder="최소 점수" min="0" max="100"
+                       onchange="filterRecommendations()" class="px-4 py-2 border rounded w-32">
+            </div>
+
+            <!-- Recommendations List -->
+            <div id="recommendationsList" class="space-y-6">
+                <div class="text-center text-gray-600 py-8">간병인을 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboardPage" class="page-content hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold mb-2">매칭 현황</h2>
+            <p class="text-gray-600 mb-8">현재 진행 중인 매칭</p>
+
+            <!-- Active Matchings -->
+            <div id="matchingList" class="space-y-4">
+                <div class="text-center text-gray-600 py-8">매칭 현황을 불러오는 중...</div>
+            </div>
+
+            <!-- Matching History -->
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold mb-6">매칭 이력</h3>
+                <div id="matchingHistory" class="space-y-4">
+                    <div class="text-center text-gray-600 py-8">이력을 불러오는 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Client -->
+<script src="api-client.js"></script>
+
+<!-- Main App Script -->
+<script>
+const PATIENT_ID = 1;
+const QUESTIONS = [
+    { question: "혼자 있을 때 편안함을 느끼시나요?", options: ["매우 그렇다", "보통이다", "그렇지 않다"] },
+    { question: "새로운 사람을 만나는 것을 좋아하시나요?", options: ["매우 좋아한다", "보통이다", "좋아하지 않는다"] },
+    { question: "정해진 일정대로 생활하는 것을 선호하시나요?", options: ["매우 선호한다", "보통이다", "선호하지 않는다"] },
+    { question: "타인의 감정을 잘 이해하는 편인가요?", options: ["매우 그렇다", "보통이다", "그렇지 않다"] },
+    { question: "활동적인 취미를 즐기시나요?", options: ["매우 즐긴다", "보통이다", "즐기지 않는다"] },
+    { question: "인내심이 있는 편인가요?", options: ["매우 그렇다", "보통이다", "그렇지 않다"] },
+    { question: "혼자 결정하는 것을 선호하시나요?", options: ["매우 선호한다", "보통이다", "선호하지 않는다"] },
+    { question: "다른 사람의 도움을 쉽게 받아들이시나요?", options: ["매우 그렇다", "보통이다", "그렇지 않다"] },
+    { question: "규칙을 중요하게 생각하시나요?", options: ["매우 중요하다", "보통이다", "중요하지 않다"] },
+    { question: "변화에 잘 적응하시나요?", options: ["매우 잘한다", "보통이다", "잘하지 못한다"] },
+    { question: "조용한 환경을 선호하시나요?", options: ["매우 선호한다", "보통이다", "선호하지 않는다"] },
+    { question: "타인과의 상호작용을 즐기시나요?", options: ["매우 즐긴다", "보통이다", "즐기지 않는다"] }
+];
+
+let currentQuestion = 0;
+let testAnswers = [];
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    await checkSystemStatus();
+    loadPage('welcome');
+});
+
+// Check system status
+async function checkSystemStatus() {
+    try {
+        const status = await api.getAPIStatus();
+        document.getElementById('apiStatusText').textContent = '✅ 운영 중';
+        document.getElementById('apiStatusText').className = 'text-xl font-bold text-green-600';
+        document.getElementById('dbStatusText').textContent = '✅ 연결됨';
+        document.getElementById('dbStatusText').className = 'text-xl font-bold text-green-600';
+
+        const stats = await api.getPersonalityStats();
+        document.getElementById('patientCountText').textContent = stats.total_count.toLocaleString() + '명';
+        document.getElementById('completionRateText').textContent = stats.completion_rate.toFixed(1) + '%';
+    } catch (error) {
+        console.error('Status check failed:', error);
+        document.getElementById('apiStatusText').textContent = '❌ 연결 실패';
+        document.getElementById('apiStatusText').className = 'text-xl font-bold text-red-600';
+    }
+}
+
+// Page Navigation
+function loadPage(pageName) {
+    // Hide all pages
+    document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+
+    // Show selected page
+    const pageId = pageName + 'Page';
+    const page = document.getElementById(pageId);
+    if (page) {
+        page.classList.remove('hidden');
+
+        // Load page-specific data
+        if (pageName === 'test') {
+            currentQuestion = 0;
+            testAnswers = [];
+            showQuestion();
+        } else if (pageName === 'recommendations') {
+            loadRecommendations();
+        } else if (pageName === 'dashboard') {
+            loadDashboard();
+        }
+    }
+}
+
+// === Personality Test ===
+function showQuestion() {
+    if (currentQuestion >= QUESTIONS.length) {
+        submitTest();
+        return;
+    }
+
+    const q = QUESTIONS[currentQuestion];
+    document.getElementById('questionNum').textContent = `질문 ${currentQuestion + 1}/${QUESTIONS.length}`;
+    document.getElementById('progressPercent').textContent = `${Math.round((currentQuestion / QUESTIONS.length) * 100)}%`;
+    document.getElementById('progressBar').style.width = `${(currentQuestion / QUESTIONS.length) * 100}%`;
+
+    let html = `<div class="mb-8">
+        <h3 class="text-2xl font-bold mb-6">${q.question}</h3>
+        <div class="space-y-3">`;
+
+    q.options.forEach((option, idx) => {
+        html += `<label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition">
+            <input type="radio" name="answer" value="${idx}" class="mr-4 w-5 h-5">
+            <span class="text-lg">${option}</span>
+        </label>`;
+    });
+
+    html += `</div></div>`;
+    html += `<div class="flex gap-4">
+        <button onclick="prevQuestion()" class="px-6 py-2 border rounded font-bold hover:bg-gray-100" ${currentQuestion === 0 ? 'disabled style="opacity:0.5"' : ''}>← 이전</button>
+        <button onclick="nextQuestion()" class="flex-1 px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700">다음 →</button>
+    </div>`;
+
+    document.getElementById('questionContainer').innerHTML = html;
+}
+
+function prevQuestion() {
+    if (currentQuestion > 0) {
+        currentQuestion--;
+        showQuestion();
+    }
+}
+
+function nextQuestion() {
+    const selected = document.querySelector('input[name="answer"]:checked');
+    if (!selected) {
+        alert('답을 선택해주세요');
+        return;
+    }
+
+    testAnswers[currentQuestion] = parseInt(selected.value);
+    currentQuestion++;
+    showQuestion();
+}
+
+async function submitTest() {
+    try {
+        const result = await api.savePersonalityTest(PATIENT_ID, testAnswers);
+        document.getElementById('questionContainer').innerHTML = '';
+        document.getElementById('testResultSummary').classList.remove('hidden');
+        document.getElementById('resultMessage').textContent =
+            `당신의 성향 프로필이 저장되었습니다! 이제 맞춤 간병인을 추천받으세요.`;
+    } catch (error) {
+        alert('테스트 제출 실패: ' + error.message);
+    }
+}
+
+// === Caregiver Recommendations ===
+async function loadRecommendations() {
+    try {
+        const data = await api.recommendCaregivers(PATIENT_ID, 10);
+        let html = '';
+
+        data.recommendations.forEach((caregiver, idx) => {
+            const gradeColor = caregiver.grade === 'A' ? 'bg-green-100 text-green-800' :
+                              caregiver.grade === 'B' ? 'bg-blue-100 text-blue-800' :
+                              'bg-yellow-100 text-yellow-800';
+
+            html += `
+            <div class="border rounded-lg p-6 hover:shadow-lg transition">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold">${caregiver.caregiver_name}</h3>
+                        <p class="text-gray-600">${caregiver.job_title}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-blue-600">${caregiver.matching_score.toFixed(1)}</div>
+                        <span class="px-3 py-1 rounded text-sm font-bold ${gradeColor}">${caregiver.grade}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="p-3 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">공감도</p>
+                        <p class="text-lg font-bold">${caregiver.empathy_match.toFixed(0)}점</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">의료기술</p>
+                        <p class="text-lg font-bold">${caregiver.care_compatibility.toFixed(0)}점</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">성격일치</p>
+                        <p class="text-lg font-bold">${caregiver.personality_compatibility.toFixed(0)}점</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">인내심</p>
+                        <p class="text-lg font-bold">${caregiver.patience_match.toFixed(0)}점</p>
+                    </div>
+                </div>
+
+                <button onclick="requestMatching(${caregiver.caregiver_id}, '${caregiver.caregiver_name}')"
+                        class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">
+                    매칭 요청
+                </button>
+            </div>`;
+        });
+
+        document.getElementById('recommendationsList').innerHTML = html || '<p class="text-center text-gray-600">추천 간병인이 없습니다</p>';
+    } catch (error) {
+        console.error('Failed to load recommendations:', error);
+        document.getElementById('recommendationsList').innerHTML = `<p class="text-center text-red-600">오류: ${error.message}</p>`;
+    }
+}
+
+async function requestMatching(caregiverId, caregiverName) {
+    try {
+        const result = await api.createMatching(PATIENT_ID, caregiverId);
+        alert(`✅ ${caregiverName}님과의 매칭 요청이 완료되었습니다!`);
+        loadDashboard();
+    } catch (error) {
+        alert(`❌ 매칭 요청 실패: ${error.message}`);
+    }
+}
+
+function filterRecommendations() {
+    // TODO: Implement filtering
+    loadRecommendations();
+}
+
+// === Dashboard ===
+async function loadDashboard() {
+    try {
+        const history = await api.getMatchingHistory(PATIENT_ID);
+        let html = '';
+
+        if (history.matchings && history.matchings.length > 0) {
+            history.matchings.forEach(matching => {
+                html += `
+                <div class="border rounded-lg p-6 ${matching.status === 'Active' ? 'border-green-300 bg-green-50' : 'border-gray-300'}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-xl font-bold">${matching.caregiver_name}</h3>
+                            <p class="text-gray-600">${matching.started_at ? '시작: ' + new Date(matching.started_at).toLocaleDateString('ko-KR') : ''}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-blue-600">${matching.matching_score.toFixed(1)}</div>
+                            <span class="px-3 py-1 rounded text-sm font-bold ${
+                                matching.status === 'Active' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
+                            }">${matching.status}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        } else {
+            html = '<p class="text-center text-gray-600">현재 진행 중인 매칭이 없습니다</p>';
+        }
+
+        document.getElementById('matchingHistory').innerHTML = html;
+    } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        document.getElementById('matchingHistory').innerHTML = `<p class="text-center text-red-600">오류: ${error.message}</p>`;
+    }
+}
+</script>
+
+</body>
+</html>
