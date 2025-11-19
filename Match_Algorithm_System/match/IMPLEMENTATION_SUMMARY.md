@@ -79,11 +79,11 @@ match/
 │
 ├── page_design/                    # Google Stitch 생성 UI
 │   ├── welcome_to_bluedonulab_onboarding/
-│   ├── personality_test:_care_preferences/
+│   ├── personality_test_care_preferences/
 │   ├── personality_test_results/
 │   ├── caregiver_recommendation_list/
 │   ├── detailed_caregiver_profile/
-│   └── patient_dashboard:_active_matching/
+│   └── patient_dashboard_active_matching/
 │
 ├── data/                           # 데이터 저장소
 │   ├── raw/                        # 원본 CSV (1,000+1,000+2,000)
@@ -243,11 +243,11 @@ curl -X POST "http://localhost:8000/api/personality/test" \
 
 ```
 http://localhost:8000/ui/welcome_to_bluedonulab_onboarding/code.html
-http://localhost:8000/ui/personality_test:_care_preferences/code.html
+http://localhost:8000/ui/personality_test_care_preferences/code.html
 http://localhost:8000/ui/personality_test_results/code.html
 http://localhost:8000/ui/caregiver_recommendation_list/code.html
 http://localhost:8000/ui/detailed_caregiver_profile/code.html
-http://localhost:8000/ui/patient_dashboard:_active_matching/code.html
+http://localhost:8000/ui/patient_dashboard_active_matching/code.html
 ```
 
 ---

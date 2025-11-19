@@ -63,7 +63,7 @@ page_design/
 │   ├── code.html                  ← ✅ API 통합됨 (Get Started 버튼)
 │   └── screen.png
 │
-├── personality_test:_care_preferences/
+├── personality_test_care_preferences/
 │   ├── code.html                  ← 📋 통합 대기중
 │   └── screen.png
 │
@@ -79,7 +79,7 @@ page_design/
 │   ├── code.html                  ← 📋 통합 대기중
 │   └── screen.png
 │
-└── patient_dashboard:_active_matching/
+└── patient_dashboard_active_matching/
     ├── code.html                  ← 📋 통합 대기중
     └── screen.png
 ```
@@ -217,7 +217,7 @@ document.getElementById("getStartedBtn").addEventListener("click", async functio
     `);
 
     // 4. 다음 페이지로 이동 (구현 예정)
-    // window.location.href = "../personality_test:_care_preferences/code.html";
+    // window.location.href = "../personality_test_care_preferences/code.html";
   } catch (error) {
     alert("❌ 오류: " + error.message);
   }
