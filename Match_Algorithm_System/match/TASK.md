@@ -829,11 +829,11 @@ page_design/
 ├── welcome_to_bluedonulab_onboarding/
 │   ├── screen.png          # 설계 미리보기
 │   └── code.html           # 생성된 HTML
-├── personality_test:_care_preferences/
+├── personality_test_care_preferences/
 ├── personality_test_results/
 ├── caregiver_recommendation_list/
 ├── detailed_caregiver_profile/
-└── patient_dashboard:_active_matching/
+└── patient_dashboard_active_matching/
 ```
 
 **통합 작업**:
