@@ -1,0 +1,58 @@
+name: Deploy Backend to Azure Web App
+
+on:
+  push:
+    branches:
+      - backend-deploy
+      - main
+    paths:
+      - 'backend/**'  # backend 폴더 변경 시에만 배포
+  workflow_dispatch:  # 수동 실행 가능
+
+env:
+  AZURE_WEBAPP_NAME: nuelbomcare-api  # 본인 App Service 이름으로 변경
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Python 설정
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # 3. 의존성 설치 (backend 폴더)
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. backend 폴더만 ZIP 압축
+      - name: Create deployment package
+        run: |
+          cd backend
+          zip -r ../deploy.zip . \
+            -x "*.git*" \
+            -x "*__pycache__*" \
+            -x "*.pyc" \
+            -x "*.env" \
+            -x "venv/*" \
+            -x ".venv/*" \
+            -x "tests/*" \
+            -x "*.md"
+
+      # 5. Azure Web App에 배포
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy.zip
