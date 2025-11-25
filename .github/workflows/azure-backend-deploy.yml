@@ -1,10 +1,8 @@
-name: Deploy Backend to Azure Web App
+name: Deploy Backend to Azure
 
 on:
   push:
-    branches:
-      - backend-deploy
-      - main
+    branches: [backend-deploy, main]
   workflow_dispatch:
 
 env:
@@ -12,42 +10,26 @@ env:
   PYTHON_VERSION: '3.10'
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      # 1. 코드 체크아웃
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. Python 설정
+      - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      # 3. 가상환경 생성 및 패키지 설치
-      - name: Install dependencies
+      
+      # ZIP 압축만 (가상환경 제외)
+      - name: Create package
         run: |
           cd backend
-          python -m venv antenv
-          source antenv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # 4. 배포 패키지 생성 (가상환경 포함)
-      - name: Create deployment package
-        run: |
-          cd backend
-          zip -r ../deploy.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env"
-
-      # 5. Azure에 배포 (Oryx 빌드 건너뛰기)
-      - name: Deploy to Azure Web App
+          zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "venv/*" -x "antenv/*"
+      
+      - name: Deploy to Azure
         uses: azure/webapps-deploy@v3
         with:
-          app-name: nuelbomcare-api
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: deploy.zip
-          type: zip
-          build-command: oryx build /home/site/wwwroot --output /tmp/artifacts    
-          startup-command: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+          package: app.zip
