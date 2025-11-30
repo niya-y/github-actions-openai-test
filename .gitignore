@@ -110,7 +110,6 @@ backend/htmlcov/
 *.zip
 backend-deploy.zip
 publishprofile.xml
-.deployment
 
 # ============================================
 # Azure
@@ -160,8 +159,6 @@ frontend-new/
 # ============================================
 # 백업 폴더
 neulbomcare-ocr/
-mypage-mycaregiver/
-personality-test/
 
 # 스크린샷 (최상위 디렉토리)
 스크린샷*.png
