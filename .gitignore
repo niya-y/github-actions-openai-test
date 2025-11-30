@@ -1,0 +1,183 @@
+# 개발 환경
+.claude/
+.venv/
+venv/
+env/
+ENV/
+
+# 파이썬
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 가상환경
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# 로그 파일
+*.log
+logs/
+
+# 대용량 파일
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# PDF 문서 (선택사항)
+# *.pdf
+
+# 임시 파일
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Node.js / npm
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+.eslintcache
+
+# 보안 (민감한 정보)
+*.pem
+*.key
+*.env
+secrets/
+credentials.json
+
+# OS 파일
+.DS_Store
+*.swp
+*.swo
+
+# ============================================
+# Backend Python
+# ============================================
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/**/*.pyc
+backend/*.log
+backend/**/*.log
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# ============================================
+# Deployment
+# ============================================
+*.zip
+backend-deploy.zip
+publishprofile.xml
+.deployment
+
+# ============================================
+# Azure
+# ============================================
+.azure/
+azuredeploy.parameters.json
+
+# ============================================
+# IDE
+# ============================================
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================
+# 문서 및 기획 파일 (루트 디렉토리)
+# ============================================
+# 설계 문서
+늘봄케어_API_엔드포인트_설계.md
+API_CONTRACT.md
+BACKEND_TASKS.md
+FRONTEND_TASKS.md
+DB_SCHEMA_MIGRATION.md
+DB_SCHEMA_MIGRATION.sql
+database_schema_sql.md
+
+# PDF 분석 문서 (UUID 포함 파일명)
+*_frontend_*.pdf
+*_backend_*.pdf
+
+# 스크린샷 (보안상 제외)
+screenshot*.png
+screenshot*.jpg
+*.png
+*.jpg
+
+# Playwright MCP (테스트 자동화)
+.playwright-mcp/
+
+# 프론트엔드 백업 폴더 (test02 브랜치 복사본)
+frontend-new/
+
+# ============================================
+# 임시 폴더 및 파일
+# ============================================
+# 백업 폴더
+neulbomcare-ocr/
+mypage-mycaregiver/
+personality-test/
+
+# 스크린샷 (최상위 디렉토리)
+스크린샷*.png
+
+# 마크다운 문서 (임시 분석 문서)
+SUMMARY.txt
+FIGMA_VS_CODE_MAPPING.md
+FOR_YOU.md
+FRONTEND_FLOW_ANALYSIS.md
+IMMEDIATE_ACTION_PLAN.md
+INTEGRATION_GUIDE.md
+INTEGRATION_PROGRESS_SUMMARY.md
+P2_P11_PERSONALITY_TO_MATCHING_INTEGRATION.md
+PHASE_1_COMPLETION_REPORT.md
+PHASE_2_COMPLETION_REPORT.md
+PHASE_3_COMPLETION_REPORT.md
+README_PM.md
+QUICK_START.md
+

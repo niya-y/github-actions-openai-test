@@ -1,0 +1,28 @@
+{
+  "version": "V3 (원본 데이터 기반)",
+  "model_name": "xgboost",
+  "metrics": {
+    "model_name": "xgboost",
+    "rmse": 6.42,
+    "mae": 5.05,
+    "r2_score": 0.7927,
+    "accuracy_within_5": 57.75,
+    "accuracy_within_10": 88.65
+  },
+  "feature_columns": [
+    "empathy_diff",
+    "patience_diff",
+    "activity_diff",
+    "independence_diff",
+    "max_diff",
+    "avg_diff",
+    "empathy_diff_sq",
+    "patience_diff_sq",
+    "empathy_patience_interaction",
+    "resident_empathy",
+    "resident_patience",
+    "caregiver_empathy",
+    "caregiver_patience"
+  ],
+  "timestamp": "2025-11-17T11:30:10.248621"
+}

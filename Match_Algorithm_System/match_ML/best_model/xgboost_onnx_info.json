@@ -1,0 +1,26 @@
+{
+  "model_name": "xgboost",
+  "format": "ONNX",
+  "r2_score": 0.9508395695946603,
+  "xgboost_version": "2.1.4",
+  "onnx_opset": 12,
+  "feature_names": [
+    "empathy_diff",
+    "patience_diff",
+    "activity_diff",
+    "independence_diff",
+    "max_diff",
+    "avg_diff",
+    "empathy_diff_sq",
+    "patience_diff_sq",
+    "empathy_patience_interaction",
+    "patient_empathy",
+    "patient_patience",
+    "caregiver_empathy",
+    "caregiver_patience"
+  ],
+  "n_features": 13,
+  "input_name": "float_input",
+  "output_name": "variable",
+  "note": "Converted successfully with XGBoost 2.x + onnxmltools"
+}

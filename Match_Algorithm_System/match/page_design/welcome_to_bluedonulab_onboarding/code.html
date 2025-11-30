@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BluedonuLab Welcome</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4A90E2",
+                        "background-light": "#F4F8FA",
+                        "background-dark": "#101822",
+                        "text-primary-light": "#333333",
+                        "text-primary-dark": "#E5E7EB",
+                        "text-secondary-light": "#757575",
+                        "text-secondary-dark": "#9CA3AF"
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark">
+<div class="relative flex min-h-screen w-full flex-col font-display group/design-root" style="min-height: 100vh;">
+<div class="flex flex-col flex-1 justify-between">
+<header class="p-4 pt-6">
+<div class="flex items-center justify-center space-x-2">
+<span class="material-symbols-outlined text-primary text-3xl">health_and_safety</span>
+<span class="text-xl font-bold tracking-tight text-text-primary-light dark:text-text-primary-dark">BluedonuLab</span>
+</div>
+</header>
+<main class="flex flex-col flex-1">
+<div class="w-full flex flex-col justify-end overflow-hidden bg-center bg-no-repeat bg-cover min-h-[320px] sm:min-h-[400px]" data-alt="An illustration of a caregiver warmly placing a blanket over a patient in a wheelchair." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPNuAVLcNn9ok8nOVug0_k7aenrGChqr0e9FuIoJdfb9F7Vy748uVziGt-Lmi1fa-D1SwjfLPF5oaD3QUDzSg7gorVFX01DfgT0GgOOEDP7mhdvAcWGJPrRhOLpeZQZnFtx07IIjTS1F1bKwrsYZFuxmSsMROeJyLfopDIJ9pxuLmpX_x35cMVvClc7M85v23ugizdoKl0TNBU98TOkYOQ6Iai9h-eL1OWBxDWVLiJmLrgEvxWuTfx_4BFmoytMKY2VE-oceNujKzw");'></div>
+<div class="px-4 py-3 text-center">
+<h1 class="text-text-primary-light dark:text-text-primary-dark tracking-light text-[32px] font-bold leading-tight pb-3 pt-6">Find the Perfect Care Match</h1>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-base font-normal leading-normal pb-3 pt-1">Our AI-powered platform matches patients with the right caregivers based on personality, skills, and specific medical needs.</p>
+</div>
+</main>
+<footer class="p-4 pb-8">
+<div class="flex px-4 py-3">
+<button id="getStartedBtn" class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 flex-1 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
+<span class="truncate">Get Started</span>
+</button>
+</div>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-sm font-normal leading-normal pb-3 pt-1 text-center underline cursor-pointer" onclick="alert('Sign In 기능은 준비 중입니다')">Already have an account? Sign In</p>
+</footer>
+</div>
+</div>
+
+<!-- API 클라이언트 스크립트 로드 -->
+<script src="../api-client.js"></script>
+
+<!-- 페이지 스크립트 -->
+<script>
+  console.log("✅ Welcome 페이지 로드됨");
+
+  // Get Started 버튼 클릭 이벤트
+  document.getElementById("getStartedBtn").addEventListener("click", async function() {
+    console.log("🔄 Get Started 버튼 클릭됨");
+
+    try {
+      // API 서버 상태 확인
+      const status = await api.getAPIStatus();
+      console.log("✅ API 상태:", status);
+
+      // 성향 통계 조회 (로그인 없이 시스템 테스트)
+      const stats = await api.getPersonalityStats();
+      console.log("✅ 성향 통계:", stats);
+
+      // 성공 메시지
+      const message = `
+✅ BluedonuLab 시스템 작동 확인!
+
+📊 시스템 상태:
+- API 서버: ${status.api.status.toUpperCase()}
+- 데이터베이스: ${status.database.status.toUpperCase()}
+
+📈 환자 데이터:
+- 총 환자: ${stats.total_count}명
+- 테스트 완료: ${stats.test_completed_count}명
+- 완료율: ${stats.completion_rate}%
+
+🎉 시스템이 정상 작동 중입니다!
+
+다음: 성향 테스트 페이지로 이동 (개발 예정)
+      `;
+
+      alert(message);
+
+      // 다음 페이지로 이동 (개발 예정)
+      // window.location.href = "../personality_test_care_preferences/code.html";
+    } catch (error) {
+      console.error("❌ 오류:", error);
+      alert("❌ 오류 발생: " + error.message + "\n\n서버가 실행 중인지 확인하세요:\nuvicorn app:app --reload");
+    }
+  });
+</script>
+
+</body></html>

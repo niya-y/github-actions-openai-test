@@ -1,0 +1,135 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+      - backend-deploy  # 백엔드 전용 브랜치 추가
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 'neulbomcare'  # Azure App Service 이름
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    # 1. 코드 체크아웃
+    - name: 🛎️ Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Python 설정
+    - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    # 3. 캐시 설정 (빌드 속도 향상)
+    - name: 📦 Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # 4. 의존성 설치 및 검증
+    - name: 📥 Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        echo "✅ Dependencies installed successfully"
+
+    # 5. 의존성 검증 (uvicorn, gunicorn 확인)
+    - name: ✅ Verify critical packages
+      working-directory: ./backend
+      run: |
+        python -c "import uvicorn; print('✅ uvicorn:', uvicorn.__version__)"
+        python -c "import gunicorn; print('✅ gunicorn:', gunicorn.__version__)"
+        python -c "import fastapi; print('✅ fastapi:', fastapi.__version__)"
+        python -c "import sqlalchemy; print('✅ sqlalchemy:', sqlalchemy.__version__)"
+
+    # 6. 코드 품질 검사 (선택사항)
+    - name: 🔍 Lint with flake8
+      working-directory: ./backend
+      run: |
+        pip install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,venv
+      continue-on-error: true
+
+    # 7. 배포 패키지 생성 (Oryx 빌드용)
+    - name: 📦 Create deployment package
+      working-directory: ./backend
+      run: |
+        echo "📋 Files to be deployed:"
+        ls -lah
+
+        # 불필요한 파일 제외하고 압축
+        zip -r ../backend-deploy.zip . \
+          -x "*.pyc" -x "__pycache__/*" -x ".venv/*" -x "venv/*" \
+          -x ".git/*" -x ".env" -x "*.log"
+
+        cd ..
+        echo "✅ Deployment package created:"
+        ls -lh backend-deploy.zip
+
+    # 8. Azure App Service 배포
+    - name: 🚀 Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: './backend-deploy.zip'
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6E1F31532FB1401E8E2AD1CE74DD597F }}
+        # startup-command는 Azure Portal에서 설정 (startup.sh 사용)
+
+    # 9. 배포 후 워밍업 (Cold Start 방지)
+    - name: 🔥 Warm up application
+      run: |
+        echo "⏳ Waiting for deployment to complete..."
+        sleep 30
+        echo "🔥 Warming up application..."
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/ || echo "⚠️  Root endpoint not responding"
+
+    # 10. Health Check
+    - name: 🏥 Health check
+      run: |
+        echo "🏥 Checking health endpoint..."
+        for i in {1..5}; do
+          if curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health; then
+            echo "✅ Health check passed!"
+            exit 0
+          fi
+          echo "⏳ Attempt $i failed, retrying in 10s..."
+          sleep 10
+        done
+        echo "❌ Health check failed after 5 attempts"
+        exit 1
+
+    # 11. 배포 완료 알림
+    - name: ✅ Deployment Success
+      if: success()
+      run: |
+        echo "========================================"
+        echo "✅ Backend successfully deployed!"
+        echo "========================================"
+        echo "🌐 URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "📚 Docs: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/docs"
+
+    - name: ❌ Deployment Failed
+      if: failure()
+      run: |
+        echo "========================================"
+        echo "❌ Backend deployment failed"
+        echo "========================================"
+        echo "Please check the logs above for details"
