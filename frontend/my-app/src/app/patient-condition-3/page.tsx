@@ -157,18 +157,11 @@ export default function PatientCondition3Page() {
           {/* 기존 옵션들 (OCR 아래) */}
           <div className="bg-gray-50 rounded-2xl p-5 mb-6">
             <div className="text-[12px] font-semibold text-gray-600 mb-3">또는 다음 방법을 사용하세요</div>
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl mb-3 cursor-pointer hover:bg-gray-50 transition-all">
+            <div className="flex items-start gap-4 p-4 bg-white rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
               <div className="text-4xl shrink-0">✏️</div>
               <div className="flex-1">
                 <div className="text-[15px] font-semibold text-gray-800 mb-1">약 이름 직접 입력</div>
                 <div className="text-[12px] text-gray-600">자동완성 지원</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
-              <div className="text-4xl shrink-0">📊</div>
-              <div className="flex-1">
-                <div className="text-[15px] font-semibold text-gray-800 mb-1">약봉지 바코드 스캔</div>
-                <div className="text-[12px] text-gray-600">빠른 등록</div>
               </div>
             </div>
           </div>
