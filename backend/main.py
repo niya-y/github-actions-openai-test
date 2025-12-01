@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.database import engine, Base
-from app.routes import auth, profile, matching, care_execution, review, guardians, patients, dashboard, xgboost_matching, personality, care_plans, ocr, meal_plans
+from app.routes import auth, profile, matching, care_execution, review, guardians, patients, dashboard, xgboost_matching, personality, care_plans, ocr, meal_plans, care_reports
 
 settings = get_settings()
 
@@ -40,6 +40,8 @@ app.include_router(care_plans.router)
 app.include_router(ocr.router, prefix="/api", tags=["OCR"])
 # 식단 추천 API 라우터
 app.include_router(meal_plans.router)
+# 케어 보고서 PDF 생성 API 라우터
+app.include_router(care_reports.router)
 
 
 # @app.on_event("startup")

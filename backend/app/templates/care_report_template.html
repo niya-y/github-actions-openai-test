@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간병 일지</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+            background: white;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 10mm;
+        }
+        
+        /* 제목 */
+        .title {
+            text-align: center;
+            font-size: 20pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        
+        /* 섹션 제목 */
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        /* 테이블 공통 스타일 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        table th,
+        table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        /* 환자/간병인 정보 테이블 */
+        .info-table th {
+            background-color: #d0d0d0;
+            font-weight: bold;
+            width: 20%;
+        }
+        
+        .info-table td {
+            width: 30%;
+            text-align: left;
+            padding-left: 10px;
+        }
+        
+        /* 업무 내역 테이블 */
+        .work-table {
+            margin-top: 10px;
+        }
+        
+        .work-table th {
+            background-color: #808080;
+            color: white;
+            font-weight: bold;
+            padding: 10px 5px;
+        }
+        
+        .work-table td {
+            padding: 5px;
+        }
+        
+        .work-table .date-col {
+            width: 12%;
+        }
+        
+        .work-table .time-col {
+            width: 12%;
+        }
+        
+        .work-table .task-col {
+            width: 64%;
+            text-align: left;
+            padding-left: 10px;
+        }
+        
+        /* 체크박스 */
+        .checkbox-group {
+            display: inline-block;
+            margin-right: 15px;
+            white-space: nowrap;
+        }
+        
+        .checkbox {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+        
+        .checkbox.checked::before {
+            content: '✓';
+            display: block;
+            text-align: center;
+            line-height: 14px;
+            font-weight: bold;
+        }
+        
+        /* 서명란 */
+        .signature-section {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10pt;
+            line-height: 1.8;
+        }
+        
+        .signature-section .notice {
+            margin-bottom: 15px;
+        }
+        
+        .signature-row {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 10px;
+        }
+        
+        .signature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .signature-item .label {
+            font-weight: bold;
+        }
+        
+        .signature-item .value {
+            border-bottom: 1px solid #000;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        /* 푸터 */
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10pt;
+            padding-top: 15px;
+            border-top: 1px solid #ccc;
+        }
+        
+        .footer .logo {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .footer .contact {
+            color: #555;
+        }
+        
+        /* 인쇄 최적화 */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .container {
+                max-width: none;
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 제목 -->
+        <div class="title">간병 일지</div>
+        
+        <!-- 1. 환자 인적사항 -->
+        <div class="section-title">1. 환자 인적사항</div>
+        <table class="info-table">
+            <tr>
+                <th>성명</th>
+                <td>{{PATIENT_NAME}}</td>
+                <th>성별</th>
+                <td>{{PATIENT_GENDER}}</td>
+            </tr>
+            <tr>
+                <th>생년월일</th>
+                <td>{{PATIENT_BIRTH_DATE}}</td>
+                <th>병원</th>
+                <td>{{HOSPITAL_NAME}}</td>
+            </tr>
+        </table>
+        
+        <!-- 2. 간병인 인적사항 -->
+        <div class="section-title">2. 간병인 인적사항</div>
+        <table class="info-table">
+            <tr>
+                <th>성명</th>
+                <td>{{CAREGIVER_NAME}}</td>
+                <th>성별</th>
+                <td>{{CAREGIVER_GENDER}}</td>
+            </tr>
+            <tr>
+                <th>생년월일</th>
+                <td>{{CAREGIVER_BIRTH_DATE}}</td>
+                <th>연락처</th>
+                <td>{{CAREGIVER_PHONE}}</td>
+            </tr>
+        </table>
+        
+        <!-- 3. 간병 업무 내역 -->
+        <div class="section-title">3. 간병 업무 내역</div>
+        <table class="work-table">
+            <thead>
+                <tr>
+                    <th class="date-col">간병일자</th>
+                    <th class="time-col">간병 시작시각</th>
+                    <th class="time-col">간병 종료시각</th>
+                    <th class="task-col">간병업무</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{WORK_LOGS}}
+            </tbody>
+        </table>
+        
+        <!-- 서명란 -->
+        <div class="signature-section">
+            <div class="notice">
+                본 간병일지는 작성자(간병인) 본인 작성 및 확인 하였으며,<br>
+                서식과 다를 경우 각 책임은 작성자에게 있습니다.
+            </div>
+            
+            <div class="signature-row">
+                <div class="signature-item">
+                    <span class="label">작성일자:</span>
+                    <span class="value">{{YEAR}}</span>년
+                    <span class="value">{{MONTH}}</span>월
+                    <span class="value">{{DAY}}</span>일
+                </div>
+                <div class="signature-item">
+                    <span class="label">작성자:</span>
+                    <span class="value">{{CAREGIVER_NAME}}</span> (인)
+                </div>
+            </div>
+        </div>
+        
+        <!-- 푸터 -->
+        <div class="footer">
+            <div class="logo">🏥 서울간병인협회</div>
+            <div class="contact">
+                www.가족간병.com | 대표번호: 02-2666-1530
+            </div>
+        </div>
+    </div>
+</body>
+</html>
