@@ -81,13 +81,13 @@ export default function LoginPage() {
             <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-50/30 via-pink-50/20 to-blue-50/30 max-w-[430px] mx-auto p-6">
                 <ErrorAlert error={error} onClose={() => setError(null)} />
 
-                <div className="mb-8">
+                <div className="mb-6">
                     <Image
-                        src="/assets/logo_color_side.png"
+                        src="/assets/logo_down.png"
                         alt="늘봄케어"
-                        width={180}
-                        height={60}
-                        className="h-14 w-auto"
+                        width={360}
+                        height={120}
+                        className="h-36 w-auto"
                     />
                 </div>
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
                     <Button
                         type="submit"
                         disabled={loading || !email || !password}
-                        className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg disabled:opacity-50"
+                        className="w-full h-12 bg-[#18D4C6] hover:bg-[#15b5a9] text-white font-semibold rounded-lg disabled:opacity-50"
                     >
                         {loading ? "로그인 중..." : "로그인"}
                     </Button>
@@ -153,13 +153,13 @@ export default function LoginPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-50/30 via-pink-50/20 to-blue-50/30 max-w-[430px] mx-auto p-6">
             {/* Logo */}
-            <div className="mb-12">
+            <div className="mb-6">
                 <Image
-                    src="/assets/logo_color_side.png"
+                    src="/assets/logo_down.png"
                     alt="늘봄케어"
-                    width={180}
-                    height={60}
-                    className="h-14 w-auto"
+                    width={360}
+                    height={120}
+                    className="h-36 w-auto"
                 />
             </div>
 

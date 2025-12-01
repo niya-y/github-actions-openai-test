@@ -379,98 +379,98 @@ export default function PersonalityTestPage() {
   // Results Screen
   if (results) {
     return (
-      <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-purple-50/30 via-pink-50/20 to-blue-50/30 max-w-[430px] mx-auto overflow-hidden items-center justify-center p-6">
+      <div className="flex flex-col h-[100dvh] bg-[#E8FFFD] max-w-[430px] mx-auto overflow-hidden items-center justify-center p-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: "spring", duration: 0.5 }}
-          className="w-full bg-white rounded-4xl p-8 shadow-2xl text-center"
+          className="w-full bg-white rounded-[30px] p-6 shadow-xl text-center"
         >
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-10 h-10 text-primary" />
+          <div className="w-16 h-16 bg-[#E8FFFD] rounded-full flex items-center justify-center mx-auto mb-5">
+            <Sparkles className="w-8 h-8 text-[#18D4C6]" />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
             분석이 완료되었습니다!
           </h2>
 
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-6">
-            <p className="text-gray-700 font-semibold mb-2">추천 간병인 유형</p>
-            <p className="text-xl text-primary font-bold">
+          <div className="bg-[#E8FFFD] rounded-2xl p-5 mb-5">
+            <p className="text-gray-600 font-medium mb-1 text-sm">추천 간병인 유형</p>
+            <p className="text-lg text-[#18D4C6] font-bold">
               {results.recommendation || "따뜻하고 신뢰할 수 있는 간병인"}
             </p>
           </div>
 
           <div className="space-y-3 mb-6">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">공감 능력</span>
+              <span className="text-gray-500 text-xs">공감 능력</span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 transition-all"
+                    className="h-full bg-blue-400 transition-all"
                     style={{ width: `${results.scores?.empathy_score || 0}%` }}
                   />
                 </div>
-                <span className="text-gray-700 font-semibold w-8">
+                <span className="text-gray-600 font-medium w-6 text-xs text-right">
                   {results.scores?.empathy_score?.toFixed(0) || 0}
                 </span>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">활동성</span>
+              <span className="text-gray-500 text-xs">활동성</span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 transition-all"
+                    className="h-full bg-green-400 transition-all"
                     style={{ width: `${results.scores?.activity_score || 0}%` }}
                   />
                 </div>
-                <span className="text-gray-700 font-semibold w-8">
+                <span className="text-gray-600 font-medium w-6 text-xs text-right">
                   {results.scores?.activity_score?.toFixed(0) || 0}
                 </span>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">인내심</span>
+              <span className="text-gray-500 text-xs">인내심</span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-yellow-500 transition-all"
+                    className="h-full bg-yellow-400 transition-all"
                     style={{ width: `${results.scores?.patience_score || 0}%` }}
                   />
                 </div>
-                <span className="text-gray-700 font-semibold w-8">
+                <span className="text-gray-600 font-medium w-6 text-xs text-right">
                   {results.scores?.patience_score?.toFixed(0) || 0}
                 </span>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">자립성</span>
+              <span className="text-gray-500 text-xs">자립성</span>
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-red-500 transition-all"
+                    className="h-full bg-red-400 transition-all"
                     style={{ width: `${results.scores?.independence_score || 0}%` }}
                   />
                 </div>
-                <span className="text-gray-700 font-semibold w-8">
+                <span className="text-gray-600 font-medium w-6 text-xs text-right">
                   {results.scores?.independence_score?.toFixed(0) || 0}
                 </span>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-gray-500 mb-8">
+          <p className="text-xs text-gray-500 mb-6 leading-relaxed px-2">
             {results.ai_analysis || "분석이 준비 중입니다..."}
           </p>
 
           <div className="flex flex-col gap-3 w-full">
             <Button
               onClick={() => router.push("/login")}
-              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg"
+              className="w-full h-11 bg-[#18D4C6] hover:bg-[#15b5a9] text-white font-semibold rounded-xl text-sm shadow-md shadow-[#18D4C6]/20 transition-all"
             >
               간병인 찾기
             </Button>
@@ -481,14 +481,14 @@ export default function PersonalityTestPage() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-purple-50/30 via-pink-50/20 to-blue-50/30 max-w-[430px] mx-auto overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-white max-w-[430px] mx-auto overflow-hidden">
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
       {/* Progress Bar Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-3 shrink-0">
+      <div className="bg-white border-b border-gray-200 px-6 py-3 shrink-0">
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
           <motion.div
-            className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+            className="h-full bg-[#18d4c6]"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3 }}
@@ -502,30 +502,51 @@ export default function PersonalityTestPage() {
       {/* Chat Area */}
       <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-start min-h-0">
         <div className="h-12 shrink-0" /> {/* Top Spacer */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <AnimatePresence>
-            {messages.map((msg) => (
+            {messages.map((msg, msgIndex) => (
               <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 {msg.type === "options" ? (
                   <div className="space-y-2">
-                    <ChatBubble message={msg.text} isAi={msg.isAi} />
-                    <motion.div className="flex flex-col gap-2 ml-8 mt-2">
-                      {msg.options?.map((option, idx) => (
-                        <motion.button
-                          key={idx}
-                          onClick={() => handleOptionClick(option)}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          disabled={isTyping || loading}
-                          className="text-left p-3 rounded-2xl bg-white border-2 border-gray-200 hover:border-primary hover:bg-primary/5 text-gray-700 text-sm font-medium transition-all disabled:opacity-50"
-                        >
-                          {option.text}
-                        </motion.button>
-                      ))}
-                    </motion.div>
+                    {/* AI 질문 - 왼쪽 정렬, 회색 배경 */}
+                    <div className="flex justify-start">
+                      <div className="bg-[#f1f1f1] px-5 py-3 rounded-[20px] rounded-tl-none shadow-sm max-w-[85%]">
+                        <p className="text-[#353535] text-sm leading-relaxed font-medium">{msg.text}</p>
+                      </div>
+                    </div>
+
+                    {/* 답변 옵션 - 왼쪽 정렬, 민트색 배경 (현재 질문만 표시) */}
+                    {msgIndex === messages.length - 1 && (
+                      <motion.div className="flex flex-col gap-2 items-start w-full pl-2">
+                        {msg.options?.map((option, idx) => (
+                          <motion.button
+                            key={idx}
+                            onClick={() => handleOptionClick(option)}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            disabled={isTyping || loading}
+                            className="text-left px-5 py-3 rounded-[20px] bg-[#e7fffd] text-[#353535] text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 shadow-sm w-full max-w-[95%]"
+                          >
+                            {option.text}
+                          </motion.button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+                ) : msg.isAi ? (
+                  // AI 메시지 - 왼쪽 정렬, 회색 배경
+                  <div className="flex justify-start">
+                    <div className="bg-[#f1f1f1] px-5 py-3 rounded-[20px] rounded-tl-none shadow-sm max-w-[85%]">
+                      <p className="text-[#353535] text-sm leading-relaxed font-medium">{msg.text}</p>
+                    </div>
                   </div>
                 ) : (
-                  <ChatBubble message={msg.text} isAi={msg.isAi} />
+                  // 사용자 답변 - 오른쪽 정렬, 민트색 배경
+                  <div className="flex justify-end">
+                    <div className="bg-[#e7fffd] px-5 py-3 rounded-[20px] rounded-tr-none shadow-sm max-w-[85%]">
+                      <p className="text-[#353535] text-sm leading-relaxed font-medium">{msg.text}</p>
+                    </div>
+                  </div>
                 )}
               </motion.div>
             ))}
@@ -535,12 +556,12 @@ export default function PersonalityTestPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-end gap-2 mb-3"
+              className="flex justify-start"
             >
-              <div className="bg-white px-6 py-4 rounded-3xl shadow-sm flex gap-1.5">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0s" }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
+              <div className="bg-[#f1f1f1] px-5 py-3 rounded-[20px] rounded-tl-none flex gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0s" }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
               </div>
             </motion.div>
           )}

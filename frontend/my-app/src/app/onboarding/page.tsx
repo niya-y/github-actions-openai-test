@@ -93,41 +93,21 @@ export default function OnboardingPage() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col min-h-screen bg-[#f9f7f2] relative overflow-hidden max-w-[430px] mx-auto font-['Pretendard'] items-center justify-center">
+            <div className="flex flex-col min-h-screen bg-white relative overflow-hidden max-w-[430px] mx-auto font-['Pretendard'] items-center justify-center">
                 <div className="text-gray-500">로딩 중...</div>
             </div>
         )
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#f9f7f2] relative overflow-hidden max-w-[430px] mx-auto font-['Pretendard']">
+        <div className="flex flex-col min-h-screen bg-white relative overflow-hidden max-w-[430px] mx-auto font-['Pretendard']">
             {/* Background Gradients */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-20%] w-[400px] h-[400px] bg-purple-100/40 rounded-full blur-3xl" />
                 <div className="absolute bottom-[-10%] left-[-20%] w-[400px] h-[400px] bg-pink-100/40 rounded-full blur-3xl" />
             </div>
 
-            {/* Header - 로그인 상태 표시 */}
-            <div className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-semibold">
-                        {user?.email?.charAt(0).toUpperCase() || '?'}
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900">{user?.email || 'Unknown'}</span>
-                        <span className="text-xs text-green-600 font-medium">로그인됨 ✓</span>
-                    </div>
-                </div>
-                <button
-                    onClick={handleLogout}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="로그아웃"
-                >
-                    <LogOut className="w-5 h-5 text-gray-600" />
-                </button>
-            </div>
-
-            <div className="relative z-10 flex flex-col flex-1 px-6 pt-20 pb-10">
+            <div className="relative z-10 flex flex-col flex-1 px-6 pb-10 justify-center">
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                     <AnimatePresence mode="wait">
                         {step === 1 ? (
@@ -137,24 +117,24 @@ export default function OnboardingPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={{ duration: 0.3 }}
-                                className="w-full"
+                                className="w-full flex flex-col items-center"
                             >
-                                <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8">
+                                <div className="w-[145px] h-[145px] rounded-[33px] shadow-[1px_2px_4px_#00000040] bg-[linear-gradient(147deg,rgba(243,255,254,1)_0%,rgba(255,245,245,1)_100%)] flex items-center justify-center mb-10">
                                     <Image
-                                        src="/assets/logo_color.png"
-                                        alt="Neulbom Care Logo"
-                                        width={96}
-                                        height={96}
-                                        className="w-full h-full object-contain"
+                                        src="/assets/onboarding_1.png"
+                                        alt="Onboarding 1"
+                                        width={100}
+                                        height={100}
+                                        className="w-24 h-24 object-contain"
                                         priority
                                     />
                                 </div>
-                                <h1 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">
-                                    쉬운 간병 경험을 <br />
+                                <h1 className="text-[26px] font-bold text-gray-900 mb-4 leading-tight">
+                                    쉬운 간병 경험을<br />
                                     시작해보세요
                                 </h1>
-                                <p className="text-gray-500 leading-relaxed">
-                                    늘봄케어와 함께라면 <br />
+                                <p className="text-gray-500 leading-relaxed text-[15px]">
+                                    늘봄케어와 함께라면<br />
                                     복잡한 간병 업무도 쉬워집니다.
                                 </p>
                             </motion.div>
@@ -165,17 +145,24 @@ export default function OnboardingPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={{ duration: 0.3 }}
-                                className="w-full"
+                                className="w-full flex flex-col items-center"
                             >
-                                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-                                    <Calendar className="w-12 h-12 text-purple-500" />
+                                <div className="w-[145px] h-[145px] rounded-[33px] shadow-[1px_2px_4px_#00000040] bg-[linear-gradient(147deg,rgba(243,255,254,1)_0%,rgba(255,245,245,1)_100%)] flex items-center justify-center mb-10">
+                                    <Image
+                                        src="/assets/onboarding_2.png"
+                                        alt="Onboarding 2"
+                                        width={100}
+                                        height={100}
+                                        className="w-24 h-24 object-contain"
+                                        priority
+                                    />
                                 </div>
-                                <h1 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">
-                                    간병 일정이 필요하신가요? <br />
+                                <h1 className="text-[26px] font-bold text-gray-900 mb-4 leading-tight">
+                                    간병 일정이 필요하신가요?<br />
                                     지금 생성해봐요!
                                 </h1>
-                                <p className="text-gray-500 leading-relaxed">
-                                    맞춤형 일정을 생성하고 <br />
+                                <p className="text-gray-500 leading-relaxed text-[15px]">
+                                    맞춤형 일정을 생성하고<br />
                                     체계적으로 관리할 수 있습니다.
                                 </p>
                             </motion.div>
@@ -184,20 +171,23 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Bottom Buttons */}
-                <div className="space-y-3 mt-8">
+                <div className="space-y-4 mt-12 w-full">
                     <Button
                         onClick={handleNext}
-                        className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90"
+                        className="w-full h-14 text-[17px] font-bold rounded-xl bg-[#18D4C6] hover:bg-[#15b5a9] text-white shadow-none"
                     >
-                        {step === 1 ? "다음" : "시작하기"} <ChevronRight className="ml-1 w-5 h-5" />
+                        {step === 1 ? (
+                            <span className="flex items-center justify-center gap-1">
+                                다음 <ChevronRight className="w-5 h-5" />
+                            </span>
+                        ) : "시작하기"}
                     </Button>
-                    <Button
-                        variant="ghost"
+                    <button
                         onClick={handleSkip}
-                        className="w-full text-gray-400 hover:text-gray-600 hover:bg-transparent"
+                        className="w-full text-gray-400 text-sm hover:text-gray-600 transition-colors"
                     >
-                        건너뛰기
-                    </Button>
+                        {step === 1 ? "건너뛰기" : "다음에 할게요"}
+                    </button>
                 </div>
             </div>
         </div>
