@@ -64,13 +64,29 @@ export default function PatientCondition1Page() {
           }))
           setPatients(patientsList)
 
-          setCurrentPatient({
-            patient_id: response.latest_patient.patient_id,
-            name: response.latest_patient.name,
-            age: response.latest_patient.age,
-            birth_date: response.latest_patient.birth_date,
-            gender: response.latest_patient.gender
-          })
+          // 🔧 sessionStorage에서 선택된 환자 ID 확인
+          const selectedPatientId = sessionStorage.getItem('selected_patient_id')
+          let patientToDisplay: PatientInfo | null = null
+
+          if (selectedPatientId) {
+            // selectedPatientId가 있으면 그 환자 선택
+            patientToDisplay = patientsList.find(p => p.patient_id === parseInt(selectedPatientId)) || null
+            console.log('[PatientCondition1] Selected patient from sessionStorage:', patientToDisplay)
+          }
+
+          // selectedPatientId가 없거나 해당 환자를 찾지 못하면 latest_patient 사용
+          if (!patientToDisplay) {
+            patientToDisplay = {
+              patient_id: response.latest_patient.patient_id,
+              name: response.latest_patient.name,
+              age: response.latest_patient.age,
+              birth_date: response.latest_patient.birth_date,
+              gender: response.latest_patient.gender
+            }
+            console.log('[PatientCondition1] Using latest patient as default:', patientToDisplay)
+          }
+
+          setCurrentPatient(patientToDisplay)
           setMode('view') // 기존 환자가 있으면 보기 모드로 시작
         } else {
           setMode('addNew') // 환자가 없으면 새 환자 추가 모드로 시작

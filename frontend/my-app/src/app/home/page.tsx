@@ -15,39 +15,84 @@ import {
 } from "lucide-react"
 import { apiGet } from "@/utils/api"
 
+interface Patient {
+  patient_id: number
+  name: string
+  age: number
+  gender: string
+  created_at: string
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [patientName, setPatientName] = useState<string>("김철수님")
+  const [patientId, setPatientId] = useState<number | null>(null)
+  const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
+  const [showDropdown, setShowDropdown] = useState(false)
 
-  // 🔧 FETCH USER DATA: Get patient info from API
+  // 🔧 FETCH PATIENTS: Get all patients and show latest
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchPatients = async () => {
       try {
         const token = localStorage.getItem('access_token')
         if (!token) {
-          // For development/demo purposes, we might not want to redirect immediately if just testing UI
-          // router.push('/login')
-          // return
+          console.log('[Home] No token found')
+          setLoading(false)
+          return
         }
 
-        // Get current user info
-        const userData = await apiGet<any>('/auth/me')
+        // 환자 목록 조회 (최신순)
+        const response = await apiGet<any>('/api/patients/me')
+        console.log('[Home] Patients data:', response)
 
-        // Get patient info
-        if (userData?.patient_id) {
-          const patientData = await apiGet<any>(`/api/patients/${userData.patient_id}`)
-          setPatientName(patientData?.name || "김철수님")
+        if (response?.patients && response.patients.length > 0) {
+          setPatients(response.patients)
+
+          // sessionStorage에서 선택된 환자 확인
+          const savedPatientId = sessionStorage.getItem('selected_patient_id')
+
+          if (savedPatientId) {
+            // 저장된 환자가 있으면 그 환자 선택
+            const selectedPatient = response.patients.find(
+              (p: Patient) => p.patient_id === parseInt(savedPatientId)
+            )
+            if (selectedPatient) {
+              setPatientId(selectedPatient.patient_id)
+              setPatientName(selectedPatient.name)
+            } else {
+              // 저장된 환자가 없으면 최신 환자 선택
+              const latestPatient = response.latest_patient || response.patients[0]
+              setPatientId(latestPatient.patient_id)
+              setPatientName(latestPatient.name)
+              sessionStorage.setItem('selected_patient_id', latestPatient.patient_id.toString())
+            }
+          } else {
+            // 저장된 환자가 없으면 최신 환자 선택
+            const latestPatient = response.latest_patient || response.patients[0]
+            setPatientId(latestPatient.patient_id)
+            setPatientName(latestPatient.name)
+            sessionStorage.setItem('selected_patient_id', latestPatient.patient_id.toString())
+          }
         }
       } catch (err) {
-        console.error('[Home] Error fetching user data:', err)
+        console.error('[Home] Error fetching patients:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchUserData()
-  }, [router])
+    fetchPatients()
+  }, [])
+
+  // 환자 선택 핸들러
+  const handleSelectPatient = (patient: Patient) => {
+    setPatientId(patient.patient_id)
+    setPatientName(patient.name)
+    sessionStorage.setItem('selected_patient_id', patient.patient_id.toString())
+    setShowDropdown(false)
+    console.log('[Home] Selected patient:', patient.name, 'ID:', patient.patient_id)
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F9F9F9] font-['Pretendard'] pb-24">
@@ -66,9 +111,39 @@ export default function HomePage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xs text-[#828282] font-medium">나의 돌봄 환자</span>
-              <div className="flex items-center gap-1">
-                <span className="text-xl font-bold text-[#353535]">{patientName}</span>
-                <ChevronDown className="w-5 h-5 text-[#353535]" />
+              <div className="flex items-center gap-1 relative">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center gap-1 active:opacity-70 transition-opacity duration-150"
+                >
+                  <span className="text-xl font-bold text-[#353535]">{patientName}</span>
+                  <ChevronDown className={`w-5 h-5 text-[#353535] transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown List */}
+                {showDropdown && patients.length > 0 && (
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-[15px] shadow-lg border border-[#f0f0f0] z-50">
+                    <div className="py-2">
+                      {patients.map((patient, index) => (
+                        <button
+                          key={patient.patient_id}
+                          onClick={() => handleSelectPatient(patient)}
+                          className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-colors duration-150 ${
+                            index !== patients.length - 1 ? 'border-b border-[#f0f0f0]' : ''
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-[#353535]">{patient.name}</span>
+                            <span className="text-xs text-[#828282]">{patient.age}세</span>
+                          </div>
+                          {patientId === patient.patient_id && (
+                            <div className="w-2 h-2 rounded-full bg-[#18d4c6]"></div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -91,18 +166,18 @@ export default function HomePage() {
         {/* Main Actions */}
         <div className="grid grid-cols-2 gap-4">
           {/* My Caregiver */}
-          <button className="bg-[#18d4c6] rounded-[20px] p-5 h-[160px] flex flex-col justify-between shadow-md relative overflow-hidden group">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+          <button onClick={() => router.push('/guardians')} className="bg-[#18d4c6] rounded-[20px] p-5 h-[160px] flex flex-col justify-between shadow-md relative overflow-hidden group active:scale-95 active:shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-active:scale-90 transition-transform duration-200">
               <Search className="w-6 h-6 text-[#18d4c6]" />
             </div>
             <div className="text-left relative z-10">
-              <p className="text-lg font-bold text-white leading-tight">나의 간병인</p>
-              <p className="text-xs text-white/80 mt-1">관리하기</p>
+              <p className="text-lg font-bold text-white leading-tight">간병인 찾기</p>
+              <p className="text-xs text-white/80 mt-1">AI 기반 안심 매치</p>
             </div>
           </button>
 
           {/* Add Schedule */}
-          <button onClick={() => router.push('/schedule')} className="bg-white rounded-[20px] p-5 h-[160px] flex flex-col justify-between shadow-md border border-[#f0f0f0] group">
+          <button onClick={() => router.push('/schedule')} className="bg-white rounded-[20px] p-5 h-[160px] flex flex-col justify-between shadow-md border border-[#f0f0f0] group active:scale-95 active:shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer">
             <div className="w-12 h-12 bg-[#FFF0F0] rounded-full flex items-center justify-center">
               <Calendar className="w-6 h-6 text-[#FF6B6B]" />
             </div>
@@ -120,7 +195,7 @@ export default function HomePage() {
 
         <div className="space-y-4">
           {/* Alert Card */}
-          <div className="w-full bg-[#FFF0F0] rounded-[20px] p-5 flex items-center gap-4 shadow-sm">
+          <div className="w-full bg-[#FFF0F0] rounded-[20px] p-5 flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200">
             <div className="w-12 h-12 rounded-full border-2 border-[#FF6B6B] flex items-center justify-center bg-white shrink-0">
               <span className="text-[#FF6B6B] text-2xl font-bold">!</span>
             </div>
@@ -131,7 +206,7 @@ export default function HomePage() {
           </div>
 
           {/* Caregiver Status Card */}
-          <div className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0]">
+          <div className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0] cursor-pointer hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-[#18d4c6] flex items-center justify-center shrink-0">
                 <Image
@@ -147,7 +222,7 @@ export default function HomePage() {
                 <span className="text-[#828282] text-xs">오늘 09:00 ~ 18:00 예정</span>
               </div>
             </div>
-            <button className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center">
+            <button className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center active:scale-90 active:bg-[#E8E8E8] hover:bg-[#EBEBEB] transition-all duration-150 cursor-pointer">
               <Phone className="w-5 h-5 text-[#555555]" />
             </button>
           </div>

@@ -23,7 +23,7 @@ export default function CarePlanCreatePage() {
         setLoading(true)
 
         // sessionStorage에서 필요한 정보 추출
-        const patientId = sessionStorage.getItem('patient_id')
+        const patientId = sessionStorage.getItem('selected_patient_id')
         const matchingId = sessionStorage.getItem('matching_id')
         const selectedCaregiverStr = sessionStorage.getItem('selectedCaregiver')
         const personalityScoresStr = sessionStorage.getItem('personality_scores')

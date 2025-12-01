@@ -73,7 +73,7 @@ export default function MatchingPage() {
       }
 
       // Fetch from API
-      const patientId = sessionStorage.getItem('patient_id')
+      const patientId = sessionStorage.getItem('selected_patient_id')
       if (patientId) {
         try {
           const response = await apiGet<MatchingResponse>(

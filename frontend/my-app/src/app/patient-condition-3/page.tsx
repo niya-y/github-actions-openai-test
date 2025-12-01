@@ -66,7 +66,7 @@ export default function PatientCondition3Page() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const patientIdFromStorage = sessionStorage.getItem('patient_id')
+        const patientIdFromStorage = sessionStorage.getItem('selected_patient_id')
         if (!patientIdFromStorage) {
           setDataLoading(false)
           return
@@ -109,7 +109,7 @@ export default function PatientCondition3Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const patientId = sessionStorage.getItem('patient_id')
+    const patientId = sessionStorage.getItem('selected_patient_id')
     if (!patientId) {
       alert('환자 정보를 먼저 등록해주세요.')
       router.push('/patient-condition-1')
