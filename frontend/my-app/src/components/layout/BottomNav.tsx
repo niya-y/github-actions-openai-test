@@ -2,28 +2,28 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Search, Calendar, User } from "lucide-react"
+import Image from "next/image"
 import { cn } from "@/utils/cn"
 
 export function BottomNav() {
     const pathname = usePathname()
 
     // Hide on onboarding, login, welcome, and specific sub-pages where nav might distract
-    // Show on main tabs: /home, /caregiver-finder, /schedule, /mypage
+    // Show on main tabs: /home, /schedule, /mypage-message, /mypage-dashboard
     if (pathname === "/" || pathname === "/onboarding" || pathname === "/personality-test" || pathname === "/login" || pathname === "/welcome") {
         return null
     }
 
     const navItems = [
-        { href: "/home", label: "홈", icon: Home },
-        { href: "/caregiver-finder", label: "매칭", icon: Search },
-        { href: "/schedule", label: "일정", icon: Calendar },
-        { href: "/mypage", label: "내 정보", icon: User },
+        { href: "/home", label: "홈", icon: "/assets/nav_home.svg" },
+        { href: "/schedule", label: "일정 관리", icon: "/assets/nav_cal.svg" },
+        { href: "/mypage-message", label: "대화", icon: "/assets/nav_talk.svg" },
+        { href: "/mypage-dashboard", label: "내 정보", icon: "/assets/nav_my.svg" },
     ]
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden pb-safe">
-            <div className="flex h-16 items-center justify-around px-4">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe">
+            <div className="flex h-[60px] items-center justify-around px-4">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href
                     return (
@@ -31,12 +31,23 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex flex-col items-center justify-center space-y-1",
-                                isActive ? "text-primary" : "text-muted-foreground hover:text-primary/50"
+                                "flex flex-col items-center justify-center space-y-1 w-full h-full",
+                                isActive ? "opacity-100" : "opacity-50 hover:opacity-75"
                             )}
                         >
-                            <item.icon className={cn("h-6 w-6", isActive && "fill-current")} />
-                            <span className="text-[10px] font-medium">{item.label}</span>
+                            <Image
+                                src={item.icon}
+                                alt={item.label}
+                                width={24}
+                                height={24}
+                                className="w-6 h-6"
+                            />
+                            <span className={cn(
+                                "text-[10px] font-medium",
+                                isActive ? "text-[#353535]" : "text-[#828282]"
+                            )}>
+                                {item.label}
+                            </span>
                         </Link>
                     )
                 })}

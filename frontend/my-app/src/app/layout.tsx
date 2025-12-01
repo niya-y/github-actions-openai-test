@@ -32,7 +32,6 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <div className="w-full max-w-[430px] min-h-screen bg-background relative shadow-2xl flex flex-col">
-          <Header />
           <main className="flex-1 pb-16">{children}</main>
           <BottomNav />
         </div>

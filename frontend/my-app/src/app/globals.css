@@ -181,8 +181,6 @@
 body {
   background-color: var(--background);
   font-family: var(--font-sans), sans-serif;
-  overflow: hidden;
-  height: 100vh;
 }
 
 /* Hide scrollbar */
