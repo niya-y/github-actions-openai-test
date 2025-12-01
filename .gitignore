@@ -145,7 +145,6 @@ database_schema_sql.md
 # 스크린샷 (보안상 제외)
 screenshot*.png
 screenshot*.jpg
-*.png
 *.jpg
 
 # Playwright MCP (테스트 자동화)
