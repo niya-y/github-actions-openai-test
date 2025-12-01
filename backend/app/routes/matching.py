@@ -199,3 +199,48 @@ def list_results_enhanced(skip: int = 0, limit: int = 100, db: Session = Depends
         })
 
     return results
+
+
+@router.post("/matching/{matching_id}/select", status_code=status.HTTP_200_OK)
+async def select_caregiver(
+    matching_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    매칭 결과를 'selected' 상태로 변경
+
+    프론트엔드에서 간병인을 선택했을 때 호출합니다.
+    이 함수는 status를 'recommended' → 'selected'로 업데이트합니다.
+
+    응답:
+    {
+        "success": True,
+        "matching_id": 123,
+        "status": "selected",
+        "message": "간병인이 선택되었습니다."
+    }
+    """
+    from app.models.matching import MatchingResult
+
+    # matching_result 조회
+    matching_result = db.query(MatchingResult).filter(
+        MatchingResult.matching_id == matching_id
+    ).first()
+
+    if not matching_result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="매칭 정보를 찾을 수 없습니다"
+        )
+
+    # status를 'selected'로 업데이트
+    matching_result.status = 'selected'
+    db.commit()
+    db.refresh(matching_result)
+
+    return {
+        "success": True,
+        "matching_id": matching_result.matching_id,
+        "status": matching_result.status,
+        "message": "간병인이 선택되었습니다."
+    }

@@ -508,3 +508,101 @@ async def create_dietary_preferences(
         allergy_foods=dietary_pref.allergy_foods or [],
         restriction_foods=dietary_pref.restriction_foods or []
     )
+
+
+@router.get("/patients/{patient_id}/caregiver", status_code=status.HTTP_200_OK)
+async def get_patient_caregiver(
+    patient_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    환자에게 할당된 현재 간병인 정보 조회
+
+    matching_results에서 status='active' 또는 'selected'인 가장 최신 매칭을 조회합니다.
+
+    응답:
+    {
+        "caregiver_id": 1,
+        "caregiver_name": "박간병",
+        "experience_years": 5,
+        "specialties": ["치매 케어", "당뇨 관리"],
+        "hourly_rate": 18000,
+        "avg_rating": 4.8,
+        "matching_id": 123,
+        "status": "active"
+    }
+    또는 간병인이 없으면 null 반환
+    """
+    from app.models.profile import Patient
+    from app.models.matching import MatchingRequest, MatchingResult
+    from app.models.user import User as UserModel
+
+    # 1. 환자 접근 권한 확인
+    patient = db.query(Patient).join(Guardian).filter(
+        Patient.patient_id == patient_id,
+        Guardian.user_id == current_user.user_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 환자에 대한 접근 권한이 없습니다"
+        )
+
+    # 2. matching_results에서 status='active' 또는 'selected'인 최신 매칭 조회
+    matching_result = db.query(MatchingResult).filter(
+        MatchingResult.status.in_(['active', 'selected']),
+        MatchingResult.request_id.in_(
+            db.query(MatchingRequest.request_id).filter(
+                MatchingRequest.patient_id == patient_id
+            )
+        )
+    ).order_by(MatchingResult.updated_at.desc()).first()
+
+    if not matching_result:
+        # 할당된 간병인이 없으면 빈 응답
+        return {
+            "caregiver_id": None,
+            "caregiver_name": None,
+            "experience_years": None,
+            "specialties": [],
+            "hourly_rate": None,
+            "avg_rating": None,
+            "matching_id": None,
+            "status": None
+        }
+
+    # 3. 간병인 정보 조회
+    caregiver = db.query(Caregiver).filter(
+        Caregiver.caregiver_id == matching_result.caregiver_id
+    ).first()
+
+    if not caregiver:
+        return {
+            "caregiver_id": None,
+            "caregiver_name": None,
+            "experience_years": None,
+            "specialties": [],
+            "hourly_rate": None,
+            "avg_rating": None,
+            "matching_id": matching_result.matching_id,
+            "status": matching_result.status
+        }
+
+    # 4. 간병인 사용자 정보 조회
+    caregiver_user = db.query(UserModel).filter(
+        UserModel.user_id == caregiver.user_id
+    ).first()
+
+    # 5. 응답 반환
+    return {
+        "caregiver_id": caregiver.caregiver_id,
+        "caregiver_name": caregiver_user.name if caregiver_user else "간병인",
+        "experience_years": caregiver.experience_years or 0,
+        "specialties": caregiver.specialties.split("|") if caregiver.specialties else [],
+        "hourly_rate": caregiver.hourly_rate or 0,
+        "avg_rating": float(caregiver.avg_rating) if caregiver.avg_rating else 0,
+        "matching_id": matching_result.matching_id,
+        "status": matching_result.status
+    }

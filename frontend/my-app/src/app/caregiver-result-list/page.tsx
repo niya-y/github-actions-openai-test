@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary, secondPrimary } from '../colors'
-import { apiGet } from '@/utils/api'
+import { apiGet, apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import type { MatchingResponse, CaregiverMatch } from '@/types/api'
 
@@ -75,13 +75,34 @@ export default function CaregiverResultList() {
     fetchMatchingResults()
   }, [])
 
-  const handleSelectCaregiver = (caregiver: CaregiverMatch) => {
-    // Store selected caregiver in session storage and navigate
-    sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
-    if (caregiver.matching_id) {
-      sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
+  const handleSelectCaregiver = async (caregiver: CaregiverMatch) => {
+    try {
+      // 1. 백엔드에 매칭 선택 API 호출 (status를 'selected'로 변경)
+      if (caregiver.matching_id) {
+        const response = await apiPost<any>(
+          `/api/matching/${caregiver.matching_id}/select`,
+          {}
+        )
+        console.log('[Caregiver Result List] Caregiver selected:', response)
+      }
+
+      // 2. sessionStorage에 저장
+      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
+      if (caregiver.matching_id) {
+        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
+      }
+
+      // 3. 페이지 이동
+      router.push('/mypage-mycaregiver')
+    } catch (err) {
+      console.error('[Caregiver Result List] Failed to select caregiver:', err)
+      // 에러가 나도 계속 진행 (sessionStorage 저장은 됨)
+      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
+      if (caregiver.matching_id) {
+        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
+      }
+      router.push('/mypage-mycaregiver')
     }
-    router.push('/mypage-mycaregiver')
   }
 
   const getAvatarEmoji = (name: string) => {
