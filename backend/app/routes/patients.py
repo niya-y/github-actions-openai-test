@@ -10,13 +10,15 @@ from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.profile import Guardian, Patient
-from app.models.care_details import HealthCondition, Medication
+from app.models.care_details import HealthCondition, Medication, DietaryPreference
 from app.schemas.patient import (
     PatientCreateRequest,
     PatientInfoResponse,
     HealthStatusUpdateRequest,
     MedicationsCreateRequest,
-    MedicationInfoResponse
+    MedicationInfoResponse,
+    DietaryPreferencesCreateRequest,
+    DietaryPreferencesResponse
 )
 
 router = APIRouter(prefix="/api", tags=["Patients"])
@@ -404,4 +406,105 @@ async def create_medications(
         patient_id=patient_id,
         med_id=medication.med_id,
         medicine_names=request.medicine_names
+    )
+
+
+@router.get("/patients/{patient_id}/dietary-preferences", status_code=status.HTTP_200_OK)
+async def get_dietary_preferences(
+    patient_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    환자 식이 선호 조회
+
+    1. 환자 접근 권한 확인
+    2. dietary_preferences에서 알러지/제한 음식 조회
+    """
+    # 1. 환자 접근 권한 확인
+    patient = db.query(Patient).join(Guardian).filter(
+        Patient.patient_id == patient_id,
+        Guardian.user_id == current_user.user_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 환자에 대한 접근 권한이 없습니다"
+        )
+
+    # 2. dietary_preferences 조회
+    dietary_pref = db.query(DietaryPreference).filter(
+        DietaryPreference.patient_id == patient_id
+    ).first()
+
+    if not dietary_pref:
+        # 식이 선호 정보가 없는 경우
+        return {
+            "patient_id": patient_id,
+            "allergy_foods": [],
+            "restriction_foods": []
+        }
+
+    return {
+        "patient_id": patient_id,
+        "diet_id": dietary_pref.diet_id,
+        "allergy_foods": dietary_pref.allergy_foods or [],
+        "restriction_foods": dietary_pref.restriction_foods or []
+    }
+
+
+@router.post("/patients/{patient_id}/dietary-preferences", status_code=status.HTTP_201_CREATED, response_model=DietaryPreferencesResponse)
+async def create_dietary_preferences(
+    patient_id: int,
+    request: DietaryPreferencesCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    환자 식이 선호 등록
+
+    1. 환자 접근 권한 확인
+    2. dietary_preferences 테이블에 TEXT[] 배열로 저장
+    """
+    # 1. 환자 접근 권한 확인
+    patient = db.query(Patient).join(Guardian).filter(
+        Patient.patient_id == patient_id,
+        Guardian.user_id == current_user.user_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 환자에 대한 접근 권한이 없습니다"
+        )
+
+    # 2. dietary_preferences 테이블에 저장
+    # 기존 식이 선호 정보가 있는지 확인
+    dietary_pref = db.query(DietaryPreference).filter(
+        DietaryPreference.patient_id == patient_id
+    ).first()
+
+    if not dietary_pref:
+        # 새로운 식이 선호 정보 생성
+        dietary_pref = DietaryPreference(
+            patient_id=patient_id,
+            allergy_foods=request.allergy_foods,
+            restriction_foods=request.restriction_foods
+        )
+        db.add(dietary_pref)
+    else:
+        # 기존 정보 업데이트
+        dietary_pref.allergy_foods = request.allergy_foods
+        dietary_pref.restriction_foods = request.restriction_foods
+
+    db.commit()
+    db.refresh(dietary_pref)
+
+    # 3. 응답 반환
+    return DietaryPreferencesResponse(
+        patient_id=patient_id,
+        diet_id=dietary_pref.diet_id,
+        allergy_foods=dietary_pref.allergy_foods or [],
+        restriction_foods=dietary_pref.restriction_foods or []
     )

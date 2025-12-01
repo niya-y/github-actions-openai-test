@@ -181,16 +181,42 @@ export interface Schedule {
 }
 
 export interface MealPlan {
-  meal_plan_id: number;
+  plan_id: number;
+  patient_id: number;
   meal_date: string;
-  meal_type: string;
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   menu_name: string;
+  ingredients: string;
   nutrition_info: {
     calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    sodium_mg?: number;
+    fiber_g?: number;
   };
+  cooking_tips?: string;
+  created_at: string;
+}
+
+// AI 식단 생성 요청
+export interface MealPlanGenerateRequest {
+  meal_date: string;
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
+// 식단 제약사항 응답
+export interface DietaryConstraintsResponse {
+  patient_id: number;
+  patient_name: string;
+  allergy_foods: string[];
+  restriction_foods: string[];
+  drug_avoid_foods: string[];
+  drug_recommend_foods: string[];
+  disease_avoid_foods: string[];
+  disease_recommend_foods: string[];
+  all_avoid_foods: string[];
+  all_recommend_foods: string[];
 }
 
 export interface CarePlansResponse {
@@ -226,4 +252,18 @@ export interface DashboardResponse {
     match_score: number;
     start_date: string;
   } | null;
+}
+
+// ==================== 식이 선호 ====================
+
+export interface DietaryPreferencesCreateRequest {
+  allergy_foods: string[];
+  restriction_foods: string[];
+}
+
+export interface DietaryPreferencesApiResponse {
+  patient_id: number;
+  diet_id: number;
+  allergy_foods: string[];
+  restriction_foods: string[];
 }

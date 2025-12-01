@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # 추가 환경 변수 무시
 
 
 @lru_cache()

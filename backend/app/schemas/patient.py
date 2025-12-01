@@ -116,3 +116,17 @@ class MedicationInfoResponse(BaseModel):
     patient_id: int
     med_id: int
     medicine_names: List[str]
+
+
+class DietaryPreferencesCreateRequest(BaseModel):
+    """환자 식이 선호 등록 요청 (프론트엔드)"""
+    allergy_foods: List[str] = Field(default_factory=list, description="알레르기 음식 목록")
+    restriction_foods: List[str] = Field(default_factory=list, description="식이 제한 음식 목록")
+
+
+class DietaryPreferencesResponse(BaseModel):
+    """식이 선호 응답 (프론트엔드)"""
+    patient_id: int
+    diet_id: int
+    allergy_foods: List[str]
+    restriction_foods: List[str]

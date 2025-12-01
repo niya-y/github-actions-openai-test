@@ -6,7 +6,7 @@ import { ChevronLeft } from 'lucide-react'
 import { apiPost, apiGet } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import MedicationOCR from '@/components/MedicationOCR'
-import type { MedicationsCreateRequest, MedicationResponse } from '@/types/api'
+import type { MedicationsCreateRequest, MedicationResponse, DietaryPreferencesCreateRequest, DietaryPreferencesApiResponse } from '@/types/api'
 
 export default function PatientCondition3Page() {
   const router = useRouter()
@@ -16,6 +16,13 @@ export default function PatientCondition3Page() {
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [patientId, setPatientId] = useState<number | null>(null)
+
+  // 식이 선호 상태
+  const [currentAllergy, setCurrentAllergy] = useState('')
+  const [allergyFoods, setAllergyFoods] = useState<string[]>([])
+  const [currentRestriction, setCurrentRestriction] = useState('')
+  const [restrictionFoods, setRestrictionFoods] = useState<string[]>([])
+
 
   const handleAddMedication = (e?: React.KeyboardEvent) => {
     if (e && e.key !== 'Enter') return
@@ -29,9 +36,35 @@ export default function PatientCondition3Page() {
     setMedicineNames(medicine_names.filter((_, i) => i !== index))
   }
 
-  // 🔧 기존 약물 정보 불러오기
+  // 알러지 음식 추가/삭제
+  const handleAddAllergy = (e?: React.KeyboardEvent) => {
+    if (e && e.key !== 'Enter') return
+    if (currentAllergy.trim()) {
+      setAllergyFoods([...allergyFoods, currentAllergy.trim()])
+      setCurrentAllergy('')
+    }
+  }
+
+  const handleRemoveAllergy = (index: number) => {
+    setAllergyFoods(allergyFoods.filter((_, i) => i !== index))
+  }
+
+  // 식이 제한 음식 추가/삭제
+  const handleAddRestriction = (e?: React.KeyboardEvent) => {
+    if (e && e.key !== 'Enter') return
+    if (currentRestriction.trim()) {
+      setRestrictionFoods([...restrictionFoods, currentRestriction.trim()])
+      setCurrentRestriction('')
+    }
+  }
+
+  const handleRemoveRestriction = (index: number) => {
+    setRestrictionFoods(restrictionFoods.filter((_, i) => i !== index))
+  }
+
+  // 🔧 기존 약물 정보 및 식이 선호 불러오기
   useEffect(() => {
-    const loadMedicationData = async () => {
+    const loadData = async () => {
       try {
         const patientIdFromStorage = sessionStorage.getItem('patient_id')
         if (!patientIdFromStorage) {
@@ -41,22 +74,36 @@ export default function PatientCondition3Page() {
 
         setPatientId(Number(patientIdFromStorage))
 
-        const response = await apiGet<any>(`/api/patients/${patientIdFromStorage}/medications`)
-        console.log('[PatientCondition3] Medications loaded:', response)
-
-        if (response?.medicine_names && response.medicine_names.length > 0) {
-          // 기존 약물 정보 로드
-          setMedicineNames(response.medicine_names)
+        // 약물 정보 로드
+        try {
+          const medResponse = await apiGet<any>(`/api/patients/${patientIdFromStorage}/medications`)
+          console.log('[PatientCondition3] Medications loaded:', medResponse)
+          if (medResponse?.medicine_names && medResponse.medicine_names.length > 0) {
+            setMedicineNames(medResponse.medicine_names)
+          }
+        } catch (err) {
+          console.log('[PatientCondition3] No existing medication data:', err)
         }
-      } catch (err) {
-        // 404는 정상 (첫 번째 방문)
-        console.log('[PatientCondition3] No existing medication data:', err)
+
+        // 식이 선호 정보 로드
+        try {
+          const dietResponse = await apiGet<DietaryPreferencesApiResponse>(`/api/patients/${patientIdFromStorage}/dietary-preferences`)
+          console.log('[PatientCondition3] Dietary preferences loaded:', dietResponse)
+          if (dietResponse?.allergy_foods) {
+            setAllergyFoods(dietResponse.allergy_foods)
+          }
+          if (dietResponse?.restriction_foods) {
+            setRestrictionFoods(dietResponse.restriction_foods)
+          }
+        } catch (err) {
+          console.log('[PatientCondition3] No existing dietary preferences:', err)
+        }
       } finally {
         setDataLoading(false)
       }
     }
 
-    loadMedicationData()
+    loadData()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +136,23 @@ export default function PatientCondition3Page() {
         console.log('[PatientCondition3] 약물 정보 없음 (선택사항)')
       }
 
+      // 🔧 식이 선호 정보 저장 (있는 경우)
+      if (allergyFoods.length > 0 || restrictionFoods.length > 0) {
+        const dietPayload: DietaryPreferencesCreateRequest = {
+          allergy_foods: allergyFoods,
+          restriction_foods: restrictionFoods
+        }
+
+        const dietResponse = await apiPost<DietaryPreferencesApiResponse>(
+          `/api/patients/${patientId}/dietary-preferences`,
+          dietPayload
+        )
+
+        console.log('[PatientCondition3] 식이 선호 저장 성공:', dietResponse)
+      } else {
+        console.log('[PatientCondition3] 식이 선호 없음 (선택사항)')
+      }
+
       // 🔧 모든 환자 정보 저장 완료
       console.log('[PatientCondition3] 환자 정보 저장 완료 (조건1+조건2+조건3)')
       console.log('[PatientCondition3] Patient ID:', patientId)
@@ -96,7 +160,7 @@ export default function PatientCondition3Page() {
       // 다음 페이지로 이동 (모든 데이터가 저장됨)
       router.push('/caregiver-finder')
     } catch (err) {
-      console.error('[PatientCondition3] 약물 정보 저장 실패:', err)
+      console.error('[PatientCondition3] 정보 저장 실패:', err)
       setError(err as Error)
     } finally {
       setLoading(false)
@@ -191,6 +255,68 @@ export default function PatientCondition3Page() {
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* 식이 선호 섹션 */}
+          <div className="mt-8 mb-6 pt-6 border-t border-gray-200">
+            <h3 className="text-[20px] text-gray-800 mb-2">식이 정보 (선택사항)</h3>
+            <p className="text-[13px] text-gray-600 mb-6">알러지나 식이 제한이 있으면 입력해주세요</p>
+
+            {/* 알러지 음식 */}
+            <div className="mb-6">
+              <div className="text-[14px] font-semibold text-gray-800 mb-3">🚫 알러지 음식</div>
+              <input
+                name="currentAllergy"
+                type="text"
+                className="w-full px-4 py-4 border-2 border-dashed border-red-200 rounded-xl text-[15px] text-black bg-white"
+                placeholder="알러지 음식을 입력하세요 (예: 땅콩, 갑각류, 우유...)"
+                value={currentAllergy}
+                onChange={(e) => setCurrentAllergy(e.target.value)}
+                onKeyDown={handleAddAllergy}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {allergyFoods.map((food, index) => (
+                <div key={index} className="inline-flex items-center gap-2 bg-red-100 text-red-900 px-3 py-2 rounded-full text-[14px]">
+                  <span>{food}</span>
+                  <span
+                    className="cursor-pointer font-bold text-lg leading-none"
+                    onClick={() => handleRemoveAllergy(index)}
+                  >
+                    ×
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* 식이 제한 음식 */}
+            <div className="mb-6">
+              <div className="text-[14px] font-semibold text-gray-800 mb-3">⚠️ 식이 제한 음식</div>
+              <input
+                name="currentRestriction"
+                type="text"
+                className="w-full px-4 py-4 border-2 border-dashed border-orange-200 rounded-xl text-[15px] text-black bg-white"
+                placeholder="피해야 할 음식을 입력하세요 (예: 짠 음식, 고지방 음식...)"
+                value={currentRestriction}
+                onChange={(e) => setCurrentRestriction(e.target.value)}
+                onKeyDown={handleAddRestriction}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {restrictionFoods.map((food, index) => (
+                <div key={index} className="inline-flex items-center gap-2 bg-orange-100 text-orange-900 px-3 py-2 rounded-full text-[14px]">
+                  <span>{food}</span>
+                  <span
+                    className="cursor-pointer font-bold text-lg leading-none"
+                    onClick={() => handleRemoveRestriction(index)}
+                  >
+                    ×
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 pb-3">

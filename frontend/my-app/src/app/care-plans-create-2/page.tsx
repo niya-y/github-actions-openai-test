@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary } from '../colors'
-import { apiGet } from '@/utils/api'
+import { apiGet, apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import type { CarePlansResponse, Schedule, MealPlan } from '@/types/api'
 
 export default function Screen9Schedule() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly')
+  const [activeTab, setActiveTab] = useState<'schedule' | 'meal'>('schedule')
   const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
+  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mealLoading, setMealLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
   // 기본 활동 데이터 (API에서 데이터가 없을 경우 사용)
@@ -26,7 +27,11 @@ export default function Screen9Schedule() {
   ]
 
   useEffect(() => {
-    fetchCarePlans()
+    if (activeTab === 'schedule') {
+      fetchCarePlans()
+    } else if (activeTab === 'meal') {
+      fetchMealPlan()
+    }
   }, [activeTab])
 
   const fetchCarePlans = async () => {
@@ -41,20 +46,46 @@ export default function Screen9Schedule() {
 
     try {
       const response = await apiGet<CarePlansResponse>(
-        `/api/patients/${patientId}/care-plans?type=${activeTab}`
+        `/api/patients/${patientId}/care-plans?type=weekly`
       )
 
       if (response.schedules && response.schedules.length > 0) {
         setSchedules(response.schedules)
-      }
-      if (response.meal_plans && response.meal_plans.length > 0) {
-        setMealPlans(response.meal_plans)
       }
     } catch (err) {
       console.error('케어 플랜 조회 실패:', err)
       // 에러 시에도 기본 데이터 표시
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchMealPlan = async () => {
+    const patientId = sessionStorage.getItem('patient_id')
+    if (!patientId) {
+      setMealLoading(false)
+      return
+    }
+
+    setMealLoading(true)
+    setError(null)
+
+    try {
+      // 오늘 날짜로 점심 식단 생성 요청
+      const today = new Date().toISOString().split('T')[0]
+      const response = await apiPost<MealPlan>(
+        `/api/meal-plans/patients/${patientId}/generate`,
+        {
+          meal_date: today,
+          meal_type: 'lunch'
+        }
+      )
+      setMealPlan(response)
+    } catch (err) {
+      console.error('식단 추천 생성 실패:', err)
+      setError(err as Error)
+    } finally {
+      setMealLoading(false)
     }
   }
 
@@ -69,6 +100,29 @@ export default function Screen9Schedule() {
       }))
     }
     return defaultActivities
+  }
+
+  // 식사 유형 한글 변환
+  const getMealTypeKorean = (mealType: string) => {
+    const types: Record<string, string> = {
+      breakfast: '🌅 아침',
+      lunch: '☀️ 점심',
+      dinner: '🌙 저녁',
+      snack: '🍪 간식'
+    }
+    return types[mealType] || mealType
+  }
+
+  // 영양정보 파싱 (문자열 또는 객체 처리)
+  const parseNutritionInfo = (nutritionInfo: any) => {
+    if (typeof nutritionInfo === 'string') {
+      try {
+        return JSON.parse(nutritionInfo)
+      } catch {
+        return null
+      }
+    }
+    return nutritionInfo
   }
 
   const styles = {
@@ -191,6 +245,76 @@ export default function Screen9Schedule() {
       alignItems: 'center',
       gap: '4px'
     },
+    mealCard: {
+      background: 'white',
+      borderRadius: '12px',
+      padding: '20px',
+      marginBottom: '15px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+    },
+    mealHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      marginBottom: '15px',
+      paddingBottom: '10px',
+      borderBottom: '2px solid #f0f0f0'
+    },
+    mealType: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      color: firstPrimary
+    },
+    menuName: {
+      fontSize: '20px',
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: '15px'
+    },
+    mealSection: {
+      marginBottom: '15px'
+    },
+    mealSectionTitle: {
+      fontSize: '14px',
+      fontWeight: 'bold',
+      color: '#666',
+      marginBottom: '8px'
+    },
+    mealSectionContent: {
+      fontSize: '14px',
+      color: '#333',
+      lineHeight: 1.6
+    },
+    nutritionGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '10px',
+      marginTop: '10px'
+    },
+    nutritionItem: {
+      background: '#f8f9fa',
+      borderRadius: '8px',
+      padding: '10px',
+      textAlign: 'center' as const
+    },
+    nutritionValue: {
+      fontSize: '16px',
+      fontWeight: 'bold',
+      color: firstPrimary
+    },
+    nutritionLabel: {
+      fontSize: '11px',
+      color: '#666',
+      marginTop: '4px'
+    },
+    cookingTips: {
+      background: '#fff8e1',
+      borderRadius: '8px',
+      padding: '12px',
+      fontSize: '13px',
+      color: '#795548',
+      lineHeight: 1.6
+    },
     reviewCard: {
       background: 'white',
       borderRadius: '15px',
@@ -258,6 +382,87 @@ export default function Screen9Schedule() {
 
   const activities = getActivities()
 
+  // 추천 식단 렌더링
+  const renderMealPlan = () => {
+    if (mealLoading) {
+      return (
+        <div style={styles.loadingContainer}>
+          🤖 AI가 맞춤 식단을 생성하고 있습니다...
+        </div>
+      )
+    }
+
+    if (!mealPlan) {
+      return (
+        <div style={styles.loadingContainer}>
+          식단 정보가 없습니다.
+        </div>
+      )
+    }
+
+    const nutritionInfo = parseNutritionInfo(mealPlan.nutrition_info)
+
+    return (
+      <div style={styles.mealCard}>
+        <div style={styles.mealHeader}>
+          <span style={styles.mealType}>{getMealTypeKorean(mealPlan.meal_type)}</span>
+        </div>
+
+        <div style={styles.menuName}>{mealPlan.menu_name}</div>
+
+        {mealPlan.ingredients && (
+          <div style={styles.mealSection}>
+            <div style={styles.mealSectionTitle}>🥗 재료</div>
+            <div style={styles.mealSectionContent}>{mealPlan.ingredients}</div>
+          </div>
+        )}
+
+        {nutritionInfo && (
+          <div style={styles.mealSection}>
+            <div style={styles.mealSectionTitle}>📊 영양 정보</div>
+            <div style={styles.nutritionGrid}>
+              <div style={styles.nutritionItem}>
+                <div style={styles.nutritionValue}>{nutritionInfo.calories || '-'}</div>
+                <div style={styles.nutritionLabel}>칼로리 (kcal)</div>
+              </div>
+              <div style={styles.nutritionItem}>
+                <div style={styles.nutritionValue}>{nutritionInfo.protein_g || nutritionInfo.protein || '-'}</div>
+                <div style={styles.nutritionLabel}>단백질 (g)</div>
+              </div>
+              <div style={styles.nutritionItem}>
+                <div style={styles.nutritionValue}>{nutritionInfo.carbs_g || nutritionInfo.carbs || '-'}</div>
+                <div style={styles.nutritionLabel}>탄수화물 (g)</div>
+              </div>
+              <div style={styles.nutritionItem}>
+                <div style={styles.nutritionValue}>{nutritionInfo.fat_g || nutritionInfo.fat || '-'}</div>
+                <div style={styles.nutritionLabel}>지방 (g)</div>
+              </div>
+              {nutritionInfo.sodium_mg && (
+                <div style={styles.nutritionItem}>
+                  <div style={styles.nutritionValue}>{nutritionInfo.sodium_mg}</div>
+                  <div style={styles.nutritionLabel}>나트륨 (mg)</div>
+                </div>
+              )}
+              {nutritionInfo.fiber_g && (
+                <div style={styles.nutritionItem}>
+                  <div style={styles.nutritionValue}>{nutritionInfo.fiber_g}</div>
+                  <div style={styles.nutritionLabel}>식이섬유 (g)</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mealPlan.cooking_tips && (
+          <div style={styles.mealSection}>
+            <div style={styles.mealSectionTitle}>👨‍🍳 조리 팁</div>
+            <div style={styles.cookingTips}>{mealPlan.cooking_tips}</div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={styles.container}>
       <ErrorAlert error={error} onClose={() => setError(null)} />
@@ -265,7 +470,11 @@ export default function Screen9Schedule() {
       <div style={styles.header}>
         <div style={styles.headerBox}>
           <h1 style={styles.h1}>케어 플랜</h1>
-          <p style={styles.p}>AI가 생성한 {activeTab === 'weekly' ? '7일' : '30일'} 간병 일정입니다</p>
+          <p style={styles.p}>
+            {activeTab === 'schedule'
+              ? 'AI가 생성한 7일 간병 일정입니다'
+              : 'AI가 환자 맞춤 식단을 추천합니다'}
+          </p>
 
           <div style={styles.summaryCard}>
             <div style={styles.summaryItem}>
@@ -287,58 +496,44 @@ export default function Screen9Schedule() {
       <div style={styles.content}>
         <div style={styles.tabBar}>
           <button
-            style={{ ...styles.tab, ...(activeTab === 'weekly' ? styles.tabActive : {}) }}
-            onClick={() => setActiveTab('weekly')}
+            style={{ ...styles.tab, ...(activeTab === 'schedule' ? styles.tabActive : {}) }}
+            onClick={() => setActiveTab('schedule')}
           >
-            주간
+            일정
           </button>
           <button
-            style={{ ...styles.tab, ...(activeTab === 'monthly' ? styles.tabActive : {}) }}
-            onClick={() => setActiveTab('monthly')}
+            style={{ ...styles.tab, ...(activeTab === 'meal' ? styles.tabActive : {}) }}
+            onClick={() => setActiveTab('meal')}
           >
-            월간
+            추천 식단
           </button>
         </div>
 
-        {loading ? (
-          <div style={styles.loadingContainer}>
-            케어 플랜을 불러오는 중...
-          </div>
-        ) : (
-          <div style={styles.daySchedule}>
-            <div style={styles.dayHeader}>{activeTab === 'weekly' ? '월요일' : '이번 달'} 일정</div>
+        {activeTab === 'schedule' ? (
+          loading ? (
+            <div style={styles.loadingContainer}>
+              케어 플랜을 불러오는 중...
+            </div>
+          ) : (
+            <div style={styles.daySchedule}>
+              <div style={styles.dayHeader}>월요일 일정</div>
 
-            {activities.map((activity, index) => (
-              <div key={index} style={styles.activity}>
-                <div style={styles.activityTime}>{activity.time}</div>
-                <div style={styles.activityContent}>
-                  <div style={styles.activityTitle}>{activity.title}</div>
-                  <div style={styles.activityAssignee}>{activity.assignee}</div>
-                  {activity.note && (
-                    <div style={styles.activityNote}>{activity.note}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 식단 계획 표시 */}
-        {mealPlans.length > 0 && (
-          <div style={styles.daySchedule}>
-            <div style={styles.dayHeader}>식단 계획</div>
-            {mealPlans.map((meal, index) => (
-              <div key={index} style={styles.activity}>
-                <div style={styles.activityTime}>{meal.meal_type}</div>
-                <div style={styles.activityContent}>
-                  <div style={styles.activityTitle}>{meal.menu_name}</div>
-                  <div style={styles.activityAssignee}>
-                    칼로리: {meal.nutrition_info.calories}kcal
+              {activities.map((activity, index) => (
+                <div key={index} style={styles.activity}>
+                  <div style={styles.activityTime}>{activity.time}</div>
+                  <div style={styles.activityContent}>
+                    <div style={styles.activityTitle}>{activity.title}</div>
+                    <div style={styles.activityAssignee}>{activity.assignee}</div>
+                    {activity.note && (
+                      <div style={styles.activityNote}>{activity.note}</div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        ) : (
+          renderMealPlan()
         )}
 
         <div style={styles.reviewCard}>
