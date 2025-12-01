@@ -23,11 +23,19 @@ interface Patient {
   created_at: string
 }
 
+interface Caregiver {
+  caregiver_id: number
+  name: string
+  experience_years?: number
+  specialties?: string[]
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [patientName, setPatientName] = useState<string>("김철수님")
   const [patientId, setPatientId] = useState<number | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
+  const [caregiver, setCaregiver] = useState<Caregiver | null>(null)
   const [loading, setLoading] = useState(true)
   const [showDropdown, setShowDropdown] = useState(false)
 
@@ -85,14 +93,43 @@ export default function HomePage() {
     fetchPatients()
   }, [])
 
+  // 🔧 환자의 간병인 정보 불러오기
+  const fetchCaregiverInfo = async (patientId: number) => {
+    try {
+      const response = await apiGet<any>(`/api/patients/${patientId}/caregiver`)
+      console.log('[Home] Caregiver info:', response)
+      if (response?.caregiver_id) {
+        setCaregiver({
+          caregiver_id: response.caregiver_id,
+          name: response.caregiver_name || '할당된 간병인',
+          experience_years: response.experience_years,
+          specialties: response.specialties
+        })
+      } else {
+        setCaregiver(null)
+      }
+    } catch (err) {
+      console.log('[Home] No caregiver assigned:', err)
+      setCaregiver(null)
+    }
+  }
+
   // 환자 선택 핸들러
   const handleSelectPatient = (patient: Patient) => {
     setPatientId(patient.patient_id)
     setPatientName(patient.name)
     sessionStorage.setItem('selected_patient_id', patient.patient_id.toString())
     setShowDropdown(false)
+    fetchCaregiverInfo(patient.patient_id)
     console.log('[Home] Selected patient:', patient.name, 'ID:', patient.patient_id)
   }
+
+  // 환자 ID 변경 시 간병인 정보 업데이트
+  useEffect(() => {
+    if (patientId) {
+      fetchCaregiverInfo(patientId)
+    }
+  }, [patientId])
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F9F9F9] font-['Pretendard'] pb-24">
@@ -206,26 +243,40 @@ export default function HomePage() {
           </div>
 
           {/* Caregiver Status Card */}
-          <div className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0] cursor-pointer hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#18d4c6] flex items-center justify-center shrink-0">
-                <Image
-                  src="/assets/user.svg"
-                  alt="Caregiver"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 object-contain"
-                />
+          {caregiver ? (
+            <div className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0] cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-[#18d4c6] flex items-center justify-center shrink-0">
+                  <Image
+                    src="/assets/user.svg"
+                    alt="Caregiver"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[#353535] font-bold text-lg">{caregiver.name}</span>
+                  <span className="text-[#828282] text-xs">오늘 09:00 ~ 18:00 예정</span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[#353535] font-bold text-lg">안현정 간병인</span>
-                <span className="text-[#828282] text-xs">오늘 09:00 ~ 18:00 예정</span>
+              <button className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center active:scale-90 active:bg-[#E8E8E8] hover:bg-[#EBEBEB] transition-all duration-150 cursor-pointer">
+                <Phone className="w-5 h-5 text-[#555555]" />
+              </button>
+            </div>
+          ) : (
+            <div className="w-full bg-[#FFF5F5] rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#FFE0E0] cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-[#FFE0E0] flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-6 h-6 text-[#FF6B6B]" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[#FF6B6B] font-bold text-lg">간병인 미할당</span>
+                  <span className="text-[#FF6B6B] text-xs">간병인 찾기를 통해 할당해주세요</span>
+                </div>
               </div>
             </div>
-            <button className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center active:scale-90 active:bg-[#E8E8E8] hover:bg-[#EBEBEB] transition-all duration-150 cursor-pointer">
-              <Phone className="w-5 h-5 text-[#555555]" />
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
