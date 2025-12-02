@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Camera, AlertCircle, CheckCircle } from 'lucide-react'
+import Image from 'next/image'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 import MedicineCard from './MedicineCard'
 import { apiPost } from '@/utils/api'
 import type { OCRResultResponse, MedicineDetail } from '@/types/api'
@@ -150,23 +151,23 @@ export default function MedicationOCR({
 
       {/* 로딩 상태 */}
       {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <div className="inline-flex items-center justify-center w-8 h-8 mb-2 bg-blue-100 rounded-full">
-            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="bg-[#e8fffd] border border-[#18d4c6] rounded-[10px] p-4 text-center">
+          <div className="inline-flex items-center justify-center w-8 h-8 mb-2 bg-[#18d4c6] rounded-full">
+            <div className="w-4 h-4 border-2 border-[#18d4c6] border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="font-semibold text-blue-900 text-sm">인식 중...</p>
+          <p className="font-semibold text-[#353535] text-sm">인식 중...</p>
         </div>
       )}
 
       {/* OCR 결과가 없을 때 - 촬영 옵션 표시 */}
       {!ocrResult && !isLoading && (
-        <div className="space-y-4">
+        <div className="flex flex-col items-center mb-4">
           {/* 카메라 촬영 옵션 */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={isLoading}
-            className="w-full p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-2xl hover:border-blue-300 hover:from-blue-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-[200px] h-[150px] border-2 border-[#18d4c6] rounded-[10px] flex flex-col items-center justify-center gap-3 bg-white shadow-sm hover:bg-[#e8fffd] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <input
               ref={cameraInputRef}
@@ -176,34 +177,35 @@ export default function MedicationOCR({
               onChange={handleCameraCapture}
               className="hidden"
             />
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Camera className="w-6 h-6 text-blue-600" />
-              <span className="text-lg font-bold text-blue-900">
-                📸 처방전 사진 촬영
-              </span>
+            <div className="w-16 h-12 flex items-center justify-center relative">
+              <Image
+                src="/assets/camera.svg"
+                alt="Camera"
+                width={64}
+                height={48}
+                className="object-contain"
+              />
             </div>
-            <p className="text-sm text-blue-700">
-              AI가 자동으로 약물 정보 인식
-            </p>
-            <div className="inline-block mt-2 px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
-              추천
+            <div className="w-[160px] h-9 bg-[#18d4c6] rounded flex items-center justify-center">
+              <span className="text-sm font-bold text-white">약봉지 사진 촬영</span>
             </div>
           </button>
+          <p className="text-xs text-[#828282] mt-3">구겨지면 인식이 잘 안될 수 있습니다.</p>
         </div>
       )}
 
       {/* OCR 결과 표시 - 약물 상세 정보 (팝업 없음, 내부에 표시) */}
       {ocrResult && !isLoading && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
+        <div className="bg-white border border-[#18d4c6] rounded-[10px] p-4 space-y-3">
           {/* 헤더 */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-200">
             <div>
-              <h3 className="text-base font-bold text-gray-800">검색된 약물</h3>
-              <p className="text-xs text-gray-600">{selectedMedicines.length}개 약품</p>
+              <h3 className="text-base font-bold text-[#353535]">검색된 약물</h3>
+              <p className="text-xs text-[#828282]">{selectedMedicines.length}개 약품</p>
             </div>
             <button
               onClick={handleRetake}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="text-[#a0a0a0] hover:text-[#606060] text-2xl"
             >
               ×
             </button>
@@ -213,10 +215,10 @@ export default function MedicationOCR({
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {selectedMedicines.map((medicine, idx) => (
               <div key={idx} className="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <h4 className="font-semibold text-gray-800 text-sm flex-1 truncate">{medicine.item_name}</h4>
+                <h4 className="font-semibold text-[#353535] text-sm flex-1 truncate">{medicine.item_name}</h4>
                 <button
                   onClick={() => handleRemoveMedicine(medicine.item_name)}
-                  className="text-red-500 hover:text-red-700 font-bold text-lg shrink-0"
+                  className="text-[#a0a0a0] hover:text-[#606060] font-bold text-lg shrink-0"
                 >
                   ×
                 </button>
@@ -243,7 +245,7 @@ export default function MedicationOCR({
                 setOcrResult(null)
                 setSelectedMedicines([])
               }}
-              className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 py-2 bg-[#18d4c6] text-white text-sm font-semibold rounded-[10px] hover:bg-[#15b0a8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={selectedMedicines.length === 0}
             >
               확인

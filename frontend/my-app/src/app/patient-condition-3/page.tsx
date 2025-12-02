@@ -250,7 +250,7 @@ export default function PatientCondition3Page() {
           )}
 
           {/* Medication List Input */}
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             <label className="text-lg font-bold text-[#353535]">약물 목록</label>
             <div className="flex gap-2">
               <input
@@ -274,10 +274,10 @@ export default function PatientCondition3Page() {
 
             <div className="flex flex-wrap gap-2 mb-6">
               {medicine_names.map((med, index) => (
-                <div key={index} className="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-2 rounded-full text-[14px]">
-                  <span>{med}</span>
+                <div key={index} className="inline-flex items-center gap-1 bg-[#e8fffd] text-[#18d4c6] px-2 py-1 rounded-full text-[12px] border border-[#18d4c6]">
+                  <span>#{med}</span>
                   <span
-                    className="cursor-pointer font-bold text-lg leading-none"
+                    className="cursor-pointer font-bold text-sm leading-none text-[#a0a0a0] hover:text-[#606060]"
                     onClick={() => handleRemoveMedication(index)}
                   >
                     ×
