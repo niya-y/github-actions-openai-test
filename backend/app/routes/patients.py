@@ -23,6 +23,16 @@ from app.schemas.patient import (
 
 router = APIRouter(tags=["Patients"])
 
+# 질병 한글 이름 → ID 매핑
+DISEASE_MAPPING = {
+    '치매/인지장애': 'dementia',
+    '뇌졸중/중풍': 'stroke',
+    '암': 'cancer',
+    '파킨슨병': 'parkinsons',
+    '고혈압': 'hypertension',
+    '당뇨병': 'diabetes'
+}
+
 
 @router.post("/patients", status_code=status.HTTP_201_CREATED, response_model=PatientInfoResponse)
 async def create_patient(
@@ -247,8 +257,10 @@ async def get_health_status(
     mobility_status = ""
 
     for hc in health_conditions:
+        # 매핑된 ID 또는 기본값 사용
+        disease_id = DISEASE_MAPPING.get(hc.disease_name, hc.disease_name.lower().replace(" ", "-"))
         diseases_list.append({
-            "id": hc.disease_name.lower().replace(" ", "-"),
+            "id": disease_id,
             "name": hc.disease_name
         })
 

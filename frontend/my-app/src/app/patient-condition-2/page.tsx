@@ -10,12 +10,12 @@ import { cn } from '@/utils/cn'
 import type { HealthStatusUpdateRequest, HealthConditionResponse, DiseaseItem } from '@/types/api'
 
 const diseasesOptions = [
-  { id: 'cancer', name: '암', icon: '/assets/ic_cancer.svg', activeIcon: '/assets/ic_cancer_fill.svg' },
-  { id: 'diabetes', name: '당뇨병', icon: '/assets/ic_diabetes.svg', activeIcon: '/assets/ic_diabetes_fill.svg' },
-  { id: 'hypertension', name: '고혈압', icon: '/assets/ic_hypertension.svg', activeIcon: '/assets/ic_hypertension_fill.svg' },
-  { id: 'parkinsons', name: '파킨슨병', icon: '/assets/ic_parkinsons.svg', activeIcon: '/assets/ic_parkinsons_fill.svg' },
   { id: 'dementia', name: '치매/인지장애', icon: '/assets/ic_dementia.svg', activeIcon: '/assets/ic_dementia_fill.svg' },
-  { id: 'stroke', name: '뇌졸중/중풍', icon: '/assets/ic_stroke.svg', activeIcon: '/assets/ic_stroke_fill.svg' }
+  { id: 'stroke', name: '뇌졸중/중풍', icon: '/assets/ic_stroke.svg', activeIcon: '/assets/ic_stroke_fill.svg' },
+  { id: 'cancer', name: '암', icon: '/assets/ic_cancer.svg', activeIcon: '/assets/ic_cancer_fill.svg' },
+  { id: 'parkinsons', name: '파킨슨병', icon: '/assets/ic_parkinsons.svg', activeIcon: '/assets/ic_parkinsons_fill.svg' },
+  { id: 'hypertension', name: '고혈압', icon: '/assets/ic_hypertension.svg', activeIcon: '/assets/ic_hypertension_fill.svg' },
+  { id: 'diabetes', name: '당뇨병', icon: '/assets/ic_diabetes.svg', activeIcon: '/assets/ic_diabetes_fill.svg' }
 ]
 
 const mobilityOptions = [
@@ -185,15 +185,16 @@ export default function PatientCondition2Page() {
                       : "bg-white border-[#828282]"
                   )}
                 >
-                  <div className={cn(
-                    "relative flex items-center justify-center",
-                    isStroke ? "w-9 h-9" : "w-10 h-10"
-                  )}>
+                  <div className="w-12 h-12 relative flex items-center justify-center">
                     <Image
                       src={isSelected ? disease.activeIcon : disease.icon}
                       alt={disease.name}
-                      fill
-                      className="object-contain"
+                      width={isStroke ? 36 : 40}
+                      height={isStroke ? 36 : 40}
+                      className={cn(
+                        "object-contain",
+                        isStroke ? "w-9 h-9" : "w-10 h-10"
+                      )}
                     />
                   </div>
                   <span className={cn(
