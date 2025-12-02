@@ -161,7 +161,23 @@ export default function Screen11AIValidation() {
         </div>
 
         {/* Content Section - Accept Recommendations */}
-        <div className="flex flex-col items-start self-stretch bg-white py-[18px] pr-[19px] mb-6 mx-[34px] gap-3 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+        <div className={`flex flex-col items-start self-stretch py-[18px] pr-[19px] mb-6 mx-[34px] gap-3 rounded-lg relative transition-all ${
+          decisions['accept-0'] === 'accept'
+            ? 'bg-[#F0FFFD] border-2 border-[#18D4C6]'
+            : decisions['accept-0'] === 'reject'
+            ? 'bg-gray-100 opacity-50 border-2 border-gray-300'
+            : 'bg-white border border-transparent'
+        }`} style={decisions['accept-0'] === 'accept' || decisions['accept-0'] === 'reject' ? {} : { boxShadow: "0px 1px 4px #00000040" }}>
+          {/* Status Badge */}
+          {decisions['accept-0'] && (
+            <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
+              decisions['accept-0'] === 'accept'
+                ? 'bg-[#18D4C6] text-white'
+                : 'bg-gray-400 text-white'
+            }`}>
+              {decisions['accept-0'] === 'accept' ? '✓ 확정' : '✗ 거절됨'}
+            </div>
+          )}
           <div className="flex items-center ml-[19px] gap-[7px]">
             <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
             <span className="text-[#353535] text-base font-bold">수용 권장</span>
@@ -219,11 +235,7 @@ export default function Screen11AIValidation() {
                 handleDecision('accept-0', 'accept')
                 console.log('[Care Plans] Accept recommendation clicked')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] rounded-lg border border-solid transition-all ${
-                decisions['accept-0'] === 'accept'
-                  ? 'bg-[#18D4C6] border-[#18D4C6]'
-                  : 'bg-[#18D4C6] border-[#18D4C6] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] rounded-lg border border-solid border-[#18D4C6]"
             >
               <span className="text-white text-base font-bold">수용하기</span>
             </button>
@@ -232,11 +244,7 @@ export default function Screen11AIValidation() {
                 handleDecision('accept-0', 'reject')
                 console.log('[Care Plans] Reject recommendation clicked')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] rounded-lg border border-solid transition-all ${
-                decisions['accept-0'] === 'reject'
-                  ? 'bg-[#F2F2F2] border-[#828282]'
-                  : 'bg-[#F2F2F2] border-[#828282] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#F2F2F2] text-left py-[11px] rounded-lg border border-solid border-[#828282]"
             >
               <span className="text-[#828282] text-base font-bold">거부하기</span>
             </button>
@@ -244,7 +252,17 @@ export default function Screen11AIValidation() {
         </div>
 
         {/* Content Section - Partial Accept */}
-        <div className="flex flex-col items-start self-stretch bg-white py-[17px] pr-[19px] mb-6 mx-[34px] gap-3 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+        <div className={`flex flex-col items-start self-stretch py-[17px] pr-[19px] mb-6 mx-[34px] gap-3 rounded-lg relative transition-all ${
+          decisions['partial-0'] === 'ai_suggestion' || decisions['partial-0'] === 'caregiver_suggestion' || decisions['partial-0'] === 'manual_edit'
+            ? 'bg-[#F0FFFD] border-2 border-[#18D4C6]'
+            : 'bg-white border border-transparent'
+        }`} style={decisions['partial-0'] ? {} : { boxShadow: "0px 1px 4px #00000040" }}>
+          {/* Status Badge */}
+          {decisions['partial-0'] && (
+            <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold bg-[#18D4C6] text-white">
+              ✓ 확정
+            </div>
+          )}
           <div className="flex items-center ml-5 gap-1.5">
             <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full"></div>
             <span className="text-[#353535] text-base font-bold">부분 수용 권장</span>
@@ -295,11 +313,7 @@ export default function Screen11AIValidation() {
                 handleDecision('partial-0', 'ai_suggestion')
                 console.log('[Care Plans] AI suggestion accepted')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] mr-2 rounded-lg border border-solid transition-all ${
-                decisions['partial-0'] === 'ai_suggestion'
-                  ? 'bg-[#18D4C6] border-[#18D4C6]'
-                  : 'bg-[#18D4C6] border-[#18D4C6] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] mr-2 rounded-lg border border-solid border-[#18D4C6]"
             >
               <span className="text-white text-sm font-bold">AI 제안 수용</span>
             </button>
@@ -308,11 +322,7 @@ export default function Screen11AIValidation() {
                 handleDecision('partial-0', 'caregiver_suggestion')
                 console.log('[Care Plans] Caregiver suggestion accepted')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] mr-[9px] rounded-lg border border-solid transition-all ${
-                decisions['partial-0'] === 'caregiver_suggestion'
-                  ? 'bg-[#F2F2F2] border-[#828282]'
-                  : 'bg-[#F2F2F2] border-[#828282] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#F2F2F2] text-left py-[11px] mr-[9px] rounded-lg border border-solid border-[#828282]"
             >
               <span className="text-[#828282] text-sm font-bold">제안 수용</span>
             </button>
@@ -321,11 +331,7 @@ export default function Screen11AIValidation() {
                 handleDecision('partial-0', 'manual_edit')
                 console.log('[Care Plans] Manual edit selected')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] rounded-lg border border-solid transition-all ${
-                decisions['partial-0'] === 'manual_edit'
-                  ? 'bg-[#F2F2F2] border-[#828282]'
-                  : 'bg-[#F2F2F2] border-[#828282] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#F2F2F2] text-left py-[11px] rounded-lg border border-solid border-[#828282]"
             >
               <span className="text-[#828282] text-sm font-bold">직접 수정</span>
             </button>
@@ -333,7 +339,23 @@ export default function Screen11AIValidation() {
         </div>
 
         {/* Content Section - Reject Recommendations */}
-        <div className="flex flex-col items-start self-stretch bg-white py-4 pr-[19px] mb-[95px] mx-[34px] gap-3 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+        <div className={`flex flex-col items-start self-stretch py-4 pr-[19px] mb-[95px] mx-[34px] gap-3 rounded-lg relative transition-all ${
+          decisions['reject-0'] === 'keep_original'
+            ? 'bg-[#F0FFFD] border-2 border-[#18D4C6]'
+            : decisions['reject-0'] === 'force_change'
+            ? 'bg-gray-100 opacity-50 border-2 border-gray-300'
+            : 'bg-white border border-transparent'
+        }`} style={decisions['reject-0'] === 'keep_original' || decisions['reject-0'] === 'force_change' ? {} : { boxShadow: "0px 1px 4px #00000040" }}>
+          {/* Status Badge */}
+          {decisions['reject-0'] && (
+            <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
+              decisions['reject-0'] === 'keep_original'
+                ? 'bg-[#18D4C6] text-white'
+                : 'bg-gray-400 text-white'
+            }`}>
+              {decisions['reject-0'] === 'keep_original' ? '✓ 확정' : '✗ 변경됨'}
+            </div>
+          )}
           <div className="flex items-center ml-5 gap-1.5">
             <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
             <span className="text-[#353535] text-base font-bold">거부 권장</span>
@@ -383,11 +405,7 @@ export default function Screen11AIValidation() {
                 handleDecision('reject-0', 'keep_original')
                 console.log('[Care Plans] Keep original plan selected')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] rounded-lg border border-solid transition-all ${
-                decisions['reject-0'] === 'keep_original'
-                  ? 'bg-[#18D4C6] border-[#18D4C6]'
-                  : 'bg-[#18D4C6] border-[#18D4C6] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] rounded-lg border border-solid border-[#18D4C6]"
             >
               <span className="text-white text-base font-bold">원안 유지하기</span>
             </button>
@@ -396,11 +414,7 @@ export default function Screen11AIValidation() {
                 handleDecision('reject-0', 'force_change')
                 console.log('[Care Plans] Force change selected')
               }}
-              className={`flex flex-1 flex-col items-center text-left py-[11px] rounded-lg border border-solid transition-all ${
-                decisions['reject-0'] === 'force_change'
-                  ? 'bg-[#F2F2F2] border-[#828282]'
-                  : 'bg-[#F2F2F2] border-[#828282] opacity-75'
-              }`}
+              className="flex flex-1 flex-col items-center bg-[#F2F2F2] text-left py-[11px] rounded-lg border border-solid border-[#828282]"
             >
               <span className="text-[#828282] text-base font-bold">그래도 변경</span>
             </button>
@@ -410,25 +424,18 @@ export default function Screen11AIValidation() {
         {/* Error Alert */}
         <ErrorAlert error={error} onClose={() => setError(null)} />
 
-        {/* Final Submit Button */}
-        <div className="sticky bottom-0 flex items-center gap-2 px-[34px] py-6 bg-white border-t border-gray-200">
-          <button
-            onClick={() => router.push('/care-plans-create-3')}
-            className="flex flex-1 items-center justify-center bg-white text-[#828282] border border-[#828282] py-3 rounded-lg font-bold text-base hover:opacity-80 transition-opacity"
-            disabled={loading}
-          >
-            이전
-          </button>
+        {/* Final Submit Button - Visible at bottom */}
+        <div className="sticky bottom-0 flex items-center gap-2 px-[34px] py-6 bg-white border-t border-gray-200 w-full">
           <button
             onClick={handleSubmitDecisions}
             disabled={loading || !areAllDecisionsMade()}
-            className={`flex flex-1 items-center justify-center py-3 rounded-lg font-bold text-base transition-all ${
+            className={`w-full items-center justify-center py-3 rounded-lg font-bold text-base transition-all ${
               loading || !areAllDecisionsMade()
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-[#18D4C6] text-white hover:bg-[#15b0a8]'
             }`}
           >
-            {loading ? '저장 중...' : '선택 항목 적용'}
+            {loading ? '저장 중...' : '완료된 일정보기'}
           </button>
         </div>
       </div>
