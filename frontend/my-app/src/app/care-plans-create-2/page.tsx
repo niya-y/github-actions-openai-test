@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -125,443 +125,166 @@ export default function Screen9Schedule() {
     return nutritionInfo
   }
 
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      background: background,
-      display: 'flex',
-      flexDirection: 'column' as const
-    },
-    header: {
-      background: background,
-      color: 'black',
-      padding: '20px'
-    },
-    headerBox: {
-      background: 'white',
-      borderRadius: '12px',
-      padding: '20px',
-      margin: '10px'
-    },
-    h1: {
-      fontSize: '24px',
-      marginBottom: '5px'
-    },
-    p: {
-      fontSize: '14px',
-      opacity: 0.9
-    },
-    summaryCard: {
-      background: 'rgba(255,255,255,0.2)',
-      borderRadius: '12px',
-      padding: '15px',
-      marginTop: '15px',
-      display: 'flex',
-      justifyContent: 'space-around'
-    },
-    summaryItem: {
-      textAlign: 'center' as const
-    },
-    summaryNumber: {
-      fontSize: '24px',
-      fontWeight: 'bold'
-    },
-    summaryLabel: {
-      fontSize: '11px',
-      marginTop: '3px',
-      opacity: 0.9
-    },
-    content: {
-      flex: 1,
-      overflowY: 'auto' as const,
-      padding: '20px'
-    },
-    tabBar: {
-      display: 'flex',
-      gap: '10px',
-      marginBottom: '20px'
-    },
-    tab: {
-      flex: 1,
-      padding: '10px',
-      background: '#f0f0f0',
-      borderRadius: '8px',
-      textAlign: 'center' as const,
-      fontSize: '14px',
-      cursor: 'pointer',
-      border: 'none',
-      fontWeight: 500
-    },
-    tabActive: {
-      background: firstPrimary,
-      color: 'white'
-    },
-    daySchedule: {
-      background: 'white',
-      borderRadius: '12px',
-      padding: '15px',
-      marginBottom: '15px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-    },
-    dayHeader: {
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: '15px',
-      paddingBottom: '10px',
-      borderBottom: '2px solid #f0f0f0'
-    },
-    activity: {
-      display: 'flex',
-      gap: '12px',
-      marginBottom: '12px',
-      padding: '12px',
-      background: '#fafafa',
-      borderRadius: '8px',
-      borderLeft: `3px solid ${firstPrimary}`
-    },
-    activityTime: {
-      fontWeight: 'bold',
-      color: firstPrimary,
-      fontSize: '14px',
-      minWidth: '45px'
-    },
-    activityContent: {
-      flex: 1
-    },
-    activityTitle: {
-      fontWeight: 600,
-      color: '#333',
-      marginBottom: '4px'
-    },
-    activityAssignee: {
-      fontSize: '13px',
-      color: '#666',
-      marginBottom: '4px'
-    },
-    activityNote: {
-      fontSize: '12px',
-      color: '#999',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px'
-    },
-    mealCard: {
-      background: 'white',
-      borderRadius: '12px',
-      padding: '20px',
-      marginBottom: '15px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-    },
-    mealHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      marginBottom: '15px',
-      paddingBottom: '10px',
-      borderBottom: '2px solid #f0f0f0'
-    },
-    mealType: {
-      fontSize: '18px',
-      fontWeight: 'bold',
-      color: firstPrimary
-    },
-    menuName: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: '15px'
-    },
-    mealSection: {
-      marginBottom: '15px'
-    },
-    mealSectionTitle: {
-      fontSize: '14px',
-      fontWeight: 'bold',
-      color: '#666',
-      marginBottom: '8px'
-    },
-    mealSectionContent: {
-      fontSize: '14px',
-      color: '#333',
-      lineHeight: 1.6
-    },
-    nutritionGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '10px',
-      marginTop: '10px'
-    },
-    nutritionItem: {
-      background: '#f8f9fa',
-      borderRadius: '8px',
-      padding: '10px',
-      textAlign: 'center' as const
-    },
-    nutritionValue: {
-      fontSize: '16px',
-      fontWeight: 'bold',
-      color: firstPrimary
-    },
-    nutritionLabel: {
-      fontSize: '11px',
-      color: '#666',
-      marginTop: '4px'
-    },
-    cookingTips: {
-      background: '#fff8e1',
-      borderRadius: '8px',
-      padding: '12px',
-      fontSize: '13px',
-      color: '#795548',
-      lineHeight: 1.6
-    },
-    reviewCard: {
-      background: 'white',
-      borderRadius: '15px',
-      padding: '20px',
-      color: 'black',
-      marginTop: '20px',
-      boxShadow: '0 4px 15px rgba(245, 87, 108, 0.3)'
-    },
-    reviewCardH3: {
-      fontSize: '18px',
-      marginBottom: '10px'
-    },
-    reviewCardP: {
-      fontSize: '14px',
-      lineHeight: 1.6,
-      marginBottom: '15px',
-      opacity: 0.95
-    },
-    reviewButtons: {
-      display: 'flex',
-      gap: '10px'
-    },
-    btn: {
-      flex: 1,
-      padding: '12px',
-      borderRadius: '8px',
-      border: 'none',
-      fontWeight: 600,
-      cursor: 'pointer',
-      fontSize: '14px'
-    },
-    btnOutline: {
-      background: '#f0f0f0',
-      color: 'black',
-      border: '1px solid rgba(255,255,255,0.4)'
-    },
-    btnPrimary: {
-      background: firstPrimary,
-      color: 'white',
-    },
-    bottomBar: {
-      padding: '15px 20px',
-      background: background,
-      borderTop: '1px solid #f0f0f0',
-      display: 'flex',
-      gap: '10px'
-    },
-    btnSecondary: {
-      background: '#f0f0f0',
-      color: '#333'
-    },
-    btnAction: {
-      background: firstPrimary,
-      color: 'white'
-    },
-    loadingContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '40px',
-      fontSize: '14px',
-      color: '#666'
-    }
-  }
-
   const activities = getActivities()
 
-  // 추천 식단 렌더링
-  const renderMealPlan = () => {
-    if (mealLoading) {
-      return (
-        <div style={styles.loadingContainer}>
-          🤖 AI가 맞춤 식단을 생성하고 있습니다...
-        </div>
-      )
-    }
-
-    if (!mealPlan) {
-      return (
-        <div style={styles.loadingContainer}>
-          식단 정보가 없습니다.
-        </div>
-      )
-    }
-
-    const nutritionInfo = parseNutritionInfo(mealPlan.nutrition_info)
-
-    return (
-      <div style={styles.mealCard}>
-        <div style={styles.mealHeader}>
-          <span style={styles.mealType}>{getMealTypeKorean(mealPlan.meal_type)}</span>
-        </div>
-
-        <div style={styles.menuName}>{mealPlan.menu_name}</div>
-
-        {mealPlan.ingredients && (
-          <div style={styles.mealSection}>
-            <div style={styles.mealSectionTitle}>🥗 재료</div>
-            <div style={styles.mealSectionContent}>{mealPlan.ingredients}</div>
-          </div>
-        )}
-
-        {nutritionInfo && (
-          <div style={styles.mealSection}>
-            <div style={styles.mealSectionTitle}>📊 영양 정보</div>
-            <div style={styles.nutritionGrid}>
-              <div style={styles.nutritionItem}>
-                <div style={styles.nutritionValue}>{nutritionInfo.calories || '-'}</div>
-                <div style={styles.nutritionLabel}>칼로리 (kcal)</div>
-              </div>
-              <div style={styles.nutritionItem}>
-                <div style={styles.nutritionValue}>{nutritionInfo.protein_g || nutritionInfo.protein || '-'}</div>
-                <div style={styles.nutritionLabel}>단백질 (g)</div>
-              </div>
-              <div style={styles.nutritionItem}>
-                <div style={styles.nutritionValue}>{nutritionInfo.carbs_g || nutritionInfo.carbs || '-'}</div>
-                <div style={styles.nutritionLabel}>탄수화물 (g)</div>
-              </div>
-              <div style={styles.nutritionItem}>
-                <div style={styles.nutritionValue}>{nutritionInfo.fat_g || nutritionInfo.fat || '-'}</div>
-                <div style={styles.nutritionLabel}>지방 (g)</div>
-              </div>
-              {nutritionInfo.sodium_mg && (
-                <div style={styles.nutritionItem}>
-                  <div style={styles.nutritionValue}>{nutritionInfo.sodium_mg}</div>
-                  <div style={styles.nutritionLabel}>나트륨 (mg)</div>
-                </div>
-              )}
-              {nutritionInfo.fiber_g && (
-                <div style={styles.nutritionItem}>
-                  <div style={styles.nutritionValue}>{nutritionInfo.fiber_g}</div>
-                  <div style={styles.nutritionLabel}>식이섬유 (g)</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {mealPlan.cooking_tips && (
-          <div style={styles.mealSection}>
-            <div style={styles.mealSectionTitle}>👨‍🍳 조리 팁</div>
-            <div style={styles.cookingTips}>{mealPlan.cooking_tips}</div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <div style={styles.container}>
+    <div className="flex flex-col bg-white min-h-screen">
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
-      <div style={styles.header}>
-        <div style={styles.headerBox}>
-          <h1 style={styles.h1}>케어 플랜</h1>
-          <p style={styles.p}>
-            {activeTab === 'schedule'
-              ? 'AI가 생성한 7일 간병 일정입니다'
-              : 'AI가 환자 맞춤 식단을 추천합니다'}
-          </p>
+      {/* Header Section */}
+      <div className="self-stretch bg-white py-[77px] px-[34px]" style={{ boxShadow: "0px 4px 4px #00000040" }}>
+        {/* Title & Description Box */}
+        <div className="flex flex-col items-start self-stretch bg-white py-[17px] mb-9 gap-[18px] rounded-lg border border-solid border-[#18D4C6]" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+          <div className="flex flex-col items-start ml-5 gap-1">
+            <span className="text-[#353535] text-[28px] font-bold mr-[113px]">케어 플랜</span>
+            <span className="text-[#828282] text-base font-bold">
+              {activeTab === 'schedule'
+                ? 'AI가 생성한 7일 간병 일정입니다.'
+                : 'AI가 환자 맞춤 식단을 추천합니다.'}
+            </span>
+          </div>
 
-          <div style={styles.summaryCard}>
-            <div style={styles.summaryItem}>
-              <div style={styles.summaryNumber}>{schedules.length > 0 ? schedules.length : 42}개</div>
-              <div style={styles.summaryLabel}>총 활동</div>
+          {/* Divider */}
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1'%3E%3Cline x1='0' y1='0' x2='100' y2='0' stroke='%23E0E0E0' stroke-width='1'/%3E%3C/svg%3E"
+            className="self-stretch h-[1px] mx-[19px] object-fill"
+          />
+
+          {/* Summary Cards */}
+          <div className="flex items-start self-stretch mx-[42px] gap-4">
+            <div className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
+                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
+              >
+                <span className="text-[#18D4C6] font-bold">{schedules.length > 0 ? schedules.length : 42}개</span>
+              </button>
+              <span className="text-[#828282] text-xs font-bold">총 활동</span>
             </div>
-            <div style={styles.summaryItem}>
-              <div style={styles.summaryNumber}>4명</div>
-              <div style={styles.summaryLabel}>참여 인원</div>
+
+            <div className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
+                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
+              >
+                <span className="text-[#18D4C6] font-bold">4명</span>
+              </button>
+              <span className="text-[#828282] text-xs font-bold">참여 인원</span>
             </div>
-            <div style={styles.summaryItem}>
-              <div style={styles.summaryNumber}>6시간</div>
-              <div style={styles.summaryLabel}>일일 평균</div>
+
+            <div className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
+                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
+              >
+                <span className="text-[#18D4C6] font-bold">6시간</span>
+              </button>
+              <span className="text-[#828282] text-xs font-bold">일일 평균</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div style={styles.content}>
-        <div style={styles.tabBar}>
+        {/* Tab Buttons */}
+        <div className="flex items-start self-stretch mb-3 gap-2">
           <button
-            style={{ ...styles.tab, ...(activeTab === 'schedule' ? styles.tabActive : {}) }}
+            className={`flex flex-1 flex-col items-center text-left py-3.5 rounded-lg border border-solid ${
+              activeTab === 'schedule'
+                ? 'bg-[#E8FFFD] border-[#18D4C6]'
+                : 'bg-white border-[#828282]'
+            }`}
             onClick={() => setActiveTab('schedule')}
           >
-            일정
+            <span className={`text-base font-bold ${activeTab === 'schedule' ? 'text-[#353535]' : 'text-[#828282]'}`}>
+              주간
+            </span>
           </button>
           <button
-            style={{ ...styles.tab, ...(activeTab === 'meal' ? styles.tabActive : {}) }}
+            className={`flex flex-1 flex-col items-center text-left py-3.5 rounded-lg border border-solid ${
+              activeTab === 'meal'
+                ? 'bg-[#E8FFFD] border-[#18D4C6]'
+                : 'bg-white border-[#828282]'
+            }`}
             onClick={() => setActiveTab('meal')}
           >
-            추천 식단
+            <span className={`text-base font-bold ${activeTab === 'meal' ? 'text-[#353535]' : 'text-[#828282]'}`}>
+              월간
+            </span>
           </button>
         </div>
 
+        {/* Content Section */}
         {activeTab === 'schedule' ? (
-          loading ? (
-            <div style={styles.loadingContainer}>
-              케어 플랜을 불러오는 중...
-            </div>
-          ) : (
-            <div style={styles.daySchedule}>
-              <div style={styles.dayHeader}>월요일 일정</div>
+          <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-[19px] mb-9 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+            <span className="text-[#353535] text-base font-bold mb-[11px] ml-5">월요일 일정</span>
 
-              {activities.map((activity, index) => (
-                <div key={index} style={styles.activity}>
-                  <div style={styles.activityTime}>{activity.time}</div>
-                  <div style={styles.activityContent}>
-                    <div style={styles.activityTitle}>{activity.title}</div>
-                    <div style={styles.activityAssignee}>{activity.assignee}</div>
-                    {activity.note && (
-                      <div style={styles.activityNote}>{activity.note}</div>
-                    )}
+            {/* Divider */}
+            <img
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1'%3E%3Cline x1='0' y1='0' x2='100' y2='0' stroke='%23E0E0E0' stroke-width='1'/%3E%3C/svg%3E"
+              className="self-stretch h-[1px] mb-[17px] ml-[19px] object-fill"
+            />
+
+            {/* Activities List */}
+            {loading ? (
+              <div className="w-full text-center py-8 text-[#828282]">케어 플랜을 불러오는 중...</div>
+            ) : (
+              activities.map((activity, index) => (
+                <div key={index} className="flex items-center self-stretch bg-[#F8F8F8] mb-2 ml-5 gap-[17px] rounded-[5px]">
+                  <div className="bg-[#18D4C6] w-[5px] h-[62px] rounded-tl-[5px] rounded-bl-[5px]"></div>
+                  <div className="flex shrink-0 items-center gap-[19px]">
+                    <span className="text-[#18D4C6] text-lg font-bold">{activity.time}</span>
+                    <div className="flex flex-col shrink-0 items-start">
+                      <span className="text-[#353535] text-base font-bold">{activity.title}</span>
+                      <span className="text-[#828282] text-xs">
+                        {activity.assignee}
+                        {activity.note && ` - ${activity.note}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )
+              ))
+            )}
+          </div>
         ) : (
-          renderMealPlan()
+          <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-5 mb-9 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+            {mealLoading ? (
+              <div className="w-full text-center py-8 text-[#828282]">🤖 AI가 맞춤 식단을 생성하고 있습니다...</div>
+            ) : mealPlan ? (
+              <>
+                <span className="text-[#353535] text-lg font-bold mb-3 ml-5">추천 식단</span>
+                <div className="text-[#353535] text-base font-bold mb-[11px] ml-5">{mealPlan.menu_name}</div>
+                {mealPlan.ingredients && (
+                  <div className="text-[#828282] text-xs ml-5 mb-3">재료: {mealPlan.ingredients}</div>
+                )}
+              </>
+            ) : (
+              <div className="w-full text-center py-8 text-[#828282]">식단 정보가 없습니다.</div>
+            )}
+          </div>
         )}
 
-        <div style={styles.reviewCard}>
-          <h3 style={styles.reviewCardH3}>전문가 의견을 들어보세요</h3>
-          <p style={styles.reviewCardP}>간병인님께 이 일정에 대한 검토를 요청하시겠어요?</p>
-          <p style={{ ...styles.reviewCardP, fontSize: '13px', opacity: 0.9 }}>
-            전문가의 현장 경험이 더해지면 더 실용적인 케어 플랜이 됩니다.
-          </p>
-          <div style={styles.reviewButtons}>
-            <button style={{ ...styles.btn, ...styles.btnOutline }}>나중에</button>
+        {/* Expert Opinion Section */}
+        <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-5 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+          <span className="text-[#353535] text-lg font-bold mb-3 ml-5">전문가의 의견을 들어보세요</span>
+          <span className="text-[#828282] text-sm mb-[15px] ml-5 whitespace-pre-line">
+            간병인님께 이 일정에 대한 검토를 요청하시겠어요?
+            전문가의 현장 경험이 더해지면 더 실용적인 케어
+            플랜이 됩니다.
+          </span>
+          <div className="flex items-start self-stretch ml-5 gap-[9px]">
             <button
-              style={{ ...styles.btn, ...styles.btnPrimary }}
-              onClick={() => router.push('/care-plans-create-3')}
+              className="flex flex-1 flex-col items-center bg-[#F2F2F2] text-left py-[11px] rounded-lg border border-solid border-[#828282]"
+              onClick={() => router.push('/home')}
             >
-              리뷰 요청하기
+              <span className="text-[#828282] text-base font-bold">나중에 하기</span>
+            </button>
+            <button
+              className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] rounded-lg border border-solid border-[#18D4C6]"
+              onClick={() => router.push('/care-plans-create-4')}
+            >
+              <span className="text-white text-base font-bold">요청하기</span>
             </button>
           </div>
         </div>
-      </div>
-
-      <div style={styles.bottomBar}>
-        <button style={{ ...styles.btn, ...styles.btnSecondary }}>일정 수정</button>
-        <button
-          style={{ ...styles.btn, ...styles.btnAction }}
-          onClick={() => router.push('/mypage-dashboard')}
-        >
-          이대로 시작
-        </button>
       </div>
     </div>
   )
