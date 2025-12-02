@@ -147,11 +147,16 @@ export interface CaregiverMatch {
   personality_analysis?: string;
   job_title?: string;
   availability?: string[];
+  matching_reason?: string;
 }
 
 export interface MatchingResponse {
   matches: CaregiverMatch[];
-  total_count: number;
+  total_count?: number;
+  total_matches?: number;
+  patient_id?: number;
+  algorithm_version?: string;
+  timestamp?: string;
 }
 
 // ==================== 리뷰 ====================

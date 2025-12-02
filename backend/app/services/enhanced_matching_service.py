@@ -127,6 +127,8 @@ class EnhancedMatchingService:
                         "hourly_rate": caregiver_info.get("hourly_rate", 0),
                         "avg_rating": caregiver_info.get("avg_rating", 0),
                         "profile_image_url": caregiver_info.get("profile_image_url", ""),
+                        "specialties": caregiver_info.get("specialties", []),
+                        "availability": caregiver_info.get("availability", []),
                         "model_version": "XGBoost_v3",  # 모델 버전 추적
                     }
                     recommendations.append(recommendation)

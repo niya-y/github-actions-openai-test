@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary } from '../colors'
-import Image from 'next/image'
 
 export default function Screen8Loading() {
   const router = useRouter()
@@ -160,7 +159,7 @@ export default function Screen8Loading() {
           <div style={styles.loaderContainer}>
             <div style={styles.loadingRing}></div>
             <div style={styles.loader}>
-              <Image src="/logo-fin-1.png" alt="Logo" width={64} height={64} style={styles.loaderIcon} />
+              <img src="/assets/logo.png" alt="Logo" style={styles.loaderIcon} />
             </div>
           </div>
 

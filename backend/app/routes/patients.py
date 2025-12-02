@@ -9,7 +9,7 @@ from datetime import date, datetime
 from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.models.profile import Guardian, Patient
+from app.models.profile import Guardian, Patient, Caregiver
 from app.models.care_details import HealthCondition, Medication, DietaryPreference
 from app.schemas.patient import (
     PatientCreateRequest,
@@ -420,7 +420,7 @@ async def create_medications(
         # 새로운 약물 정보 생성
         medication = Medication(
             patient_id=patient_id,
-            name=None,  # 기존 컬럼은 사용하지 않음
+            medicine_names=None,
             dosage=None,
             frequency=None,
             intake_method=None

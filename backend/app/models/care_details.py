@@ -86,23 +86,23 @@ class HealthCondition(Base):
 
 class Medication(Base):
     """투약 정보"""
-    
+
     __tablename__ = "medications"
-    
+
     med_id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     patient_id = Column(BigInteger, ForeignKey("patients.patient_id", ondelete="CASCADE"), nullable=False)
-    
-    name = Column(String(100), nullable=False)
+
+    medicine_names = Column(ARRAY(Text), nullable=True)
     dosage = Column(String(50), nullable=True)
     frequency = Column(String(50), nullable=True)
     intake_method = Column(String(100), nullable=True)
-    
+
     image_url = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Relationships
     patient = relationship("Patient", back_populates="medications")
-    
+
     __table_args__ = (
         Index("idx_medications_patient", "patient_id"),
     )

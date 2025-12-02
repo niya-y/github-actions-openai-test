@@ -124,9 +124,15 @@ export default function CaregiverFinder() {
       )
 
       console.log('XGBoost 매칭 요청 성공:', response)
+      console.log('[Caregiver Finder] First match specialties:', response.matches[0]?.specialties)
+      console.log('[Caregiver Finder] Full first match:', JSON.stringify(response.matches[0], null, 2))
 
       // 매칭 결과를 세션 스토리지에 저장
       sessionStorage.setItem('matching_results', JSON.stringify(response))
+
+      // 저장된 데이터 확인
+      const savedData = JSON.parse(sessionStorage.getItem('matching_results') || '{}')
+      console.log('[Caregiver Finder] Saved data first match specialties:', savedData.matches[0]?.specialties)
 
       // 🔴 FIX ISSUE #2: care_requirements를 세션 스토리지에 저장
       // (care-plans-create 페이지에서 하드코딩 대신 사용하기 위함)

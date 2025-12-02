@@ -2,541 +2,309 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { background, firstPrimary, secondPrimary } from '../colors'
+import { ChevronLeft, Bell, ChevronRight } from 'lucide-react'
+import { cn } from '@/utils/cn'
 import { apiGet, apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
-import type { MatchingResponse, CaregiverMatch } from '@/types/api'
+import type { CaregiverMatch, MatchingResponse } from '@/types/api'
 
-export default function CaregiverResultList() {
+export default function CaregiverResultListPage() {
   const router = useRouter()
   const [matches, setMatches] = useState<CaregiverMatch[]>([])
-  const [totalCount, setTotalCount] = useState(0)
+  const [patientName, setPatientName] = useState<string>('고객')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const [flippedCards, setFlippedCards] = useState<{ [key: string]: boolean }>({})
+  const [flippedCards, setFlippedCards] = useState<{ [key: number]: boolean }>({})
 
   useEffect(() => {
     const fetchMatchingResults = async () => {
-      // 먼저 세션 스토리지에서 매칭 결과 확인
-      const storedResults = sessionStorage.getItem('matching_results')
-      if (storedResults) {
-        try {
-          const parsed: MatchingResponse = JSON.parse(storedResults)
-          if (parsed.matches && parsed.matches.length > 0) {
-            setMatches(parsed.matches)
-            setTotalCount(parsed.total_count)
-            setLoading(false)
-            return
-          }
-        } catch (e) {
-          console.error('세션 스토리지 파싱 오류:', e)
-        }
-      }
-
-      // API에서 직접 조회 - 실제 백엔드 엔드포인트 사용
       try {
-        const response = await apiGet<any>(
-          `/api/matching/results-enhanced`
-        )
+        // 환자 이름 로드
+        const patientNameStored = sessionStorage.getItem('patient_name') || '고객'
+        setPatientName(patientNameStored)
 
-        // 백엔드 응답이 배열인 경우 처리
-        if (Array.isArray(response)) {
-          const caregiverMatches = response.map((result: any) => ({
-            matching_id: result.matching_id,
-            caregiver_id: result.caregiver_id,
-            caregiver_name: result.caregiver_name || 'Unknown',
-            grade: result.grade || '요양보호사',
-            match_score: result.match_score || 0,
-            experience_years: result.experience_years || 0,
-            specialties: result.specialties || [],
-            hourly_rate: result.hourly_rate || 0,
-            avg_rating: result.avg_rating || 0,
-            profile_image_url: result.profile_image_url || ''
-          }))
-
-          // 응답이 배열이면 그대로 사용 (비어있어도 상관없음)
-          setMatches(caregiverMatches)
-          setTotalCount(caregiverMatches.length)
-        } else {
-          // 응답 형식이 배열이 아니면 에러로 취급
-          console.error('예상하지 못한 응답 형식:', response)
-          setMatches([])
-          setTotalCount(0)
+        // SessionStorage에서 매칭 결과 조회 (최우선)
+        const storedResults = sessionStorage.getItem('matching_results')
+        if (storedResults) {
+          try {
+            const parsed: MatchingResponse = JSON.parse(storedResults)
+            if (parsed.matches && parsed.matches.length > 0) {
+              console.log('[Caregiver Result List] Matches from session:', parsed.matches.length, 'caregivers')
+              setMatches(parsed.matches)
+              setLoading(false)
+              return
+            }
+          } catch (e) {
+            console.error('[Caregiver Result List] Session storage parsing error:', e)
+          }
         }
-      } catch (err) {
-        console.error('매칭 결과 조회 실패:', err)
-        // 에러 시 빈 배열 표시 (실제 데이터가 없음을 명확히)
-        setMatches([])
-        setTotalCount(0)
-      }
 
-      setLoading(false)
+        // SessionStorage 데이터 없으면 빈 결과
+        console.log('[Caregiver Result List] No session data available')
+        setMatches([])
+      } catch (err) {
+        console.error('[Caregiver Result List] Error:', err)
+        setError(err as Error)
+        setMatches([])
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchMatchingResults()
   }, [])
 
-  const handleSelectCaregiver = async (caregiver: CaregiverMatch) => {
-    try {
-      // 1. 백엔드에 매칭 선택 API 호출 (status를 'selected'로 변경)
-      if (caregiver.matching_id) {
-        const response = await apiPost<any>(
-          `/api/matching/${caregiver.matching_id}/select`,
-          {}
-        )
-        console.log('[Caregiver Result List] Caregiver selected:', response)
-      }
-
-      // 2. sessionStorage에 저장
-      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
-      if (caregiver.matching_id) {
-        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
-      }
-
-      // 3. 페이지 이동
-      router.push('/mypage-mycaregiver')
-    } catch (err) {
-      console.error('[Caregiver Result List] Failed to select caregiver:', err)
-      // 에러가 나도 계속 진행 (sessionStorage 저장은 됨)
-      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
-      if (caregiver.matching_id) {
-        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
-      }
-      router.push('/mypage-mycaregiver')
-    }
-  }
-
-  const handleCardClick = (id: string) => {
+  const toggleFlip = (caregiverId: number) => {
     setFlippedCards(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [caregiverId]: !prev[caregiverId]
     }))
   }
 
-  const getAvatarEmoji = (name: string) => {
-    // 이름에 따라 다른 아바타 표시
-    if (name.includes('미숙') || name.includes('은영')) return '👩‍⚕️'
-    return '👨‍⚕️'
-  }
+  const handleSelectCaregiver = async (caregiver: CaregiverMatch) => {
+    try {
+      // 매칭 선택 API 호출
+      if (caregiver.matching_id) {
+        await apiPost(`/api/matching/${caregiver.matching_id}/select`, {})
+        console.log('[Caregiver Result List] Caregiver selected:', caregiver.caregiver_name)
+      }
 
-  const getGradeStars = (grade: string) => {
-    // 등급에 따른 별 개수 (A=3, B=2, C=1)
-    if (grade === 'A') return '⭐⭐⭐'
-    if (grade === 'B') return '⭐⭐'
-    if (grade === 'C') return '⭐'
-    return '⭐'
-  }
+      // sessionStorage에 저장
+      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
+      if (caregiver.matching_id) {
+        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
+      }
 
-  const styles = {
-    navBar: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '15px 20px',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    backBtn: {
-      fontSize: '20px',
-      cursor: 'pointer',
-      color: firstPrimary,
-      background: 'none',
-      border: 'none'
-    },
-    navTitle: {
-      flex: 1,
-      textAlign: 'center' as const,
-      fontWeight: 600,
-      fontSize: '17px'
-    },
-    filterBtn: {
-      fontSize: '20px',
-      cursor: 'pointer',
-      color: firstPrimary,
-      background: 'none',
-      border: 'none'
-    },
-    header: {
-      padding: '20px',
-      background: background,
-      borderBottom: '1px solid #f0f0f0'
-    },
-    h2: {
-      fontSize: '22px',
-      color: '#333',
-      marginBottom: '5px'
-    },
-    p: {
-      fontSize: '14px',
-      color: '#666'
-    },
-    content: {
-      flex: 1,
-      overflowY: 'auto' as const,
-      padding: '15px',
-      background: background
-    },
-    caregiverCard: {
-      background: 'transparent',
-      marginBottom: '15px',
-      perspective: '1000px',
-      height: '400px', // 고정 높이 필요
-      cursor: 'pointer'
-    },
-    cardInner: (isFlipped: boolean) => ({
-      position: 'relative' as const,
-      width: '100%',
-      height: '100%',
-      textAlign: 'left' as const,
-      transition: 'transform 0.6s',
-      transformStyle: 'preserve-3d' as const,
-      transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-    }),
-    cardFront: {
-      position: 'absolute' as const,
-      width: '100%',
-      height: '100%',
-      backfaceVisibility: 'hidden' as const,
-      background: 'white',
-      borderRadius: '15px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      display: 'flex',
-      flexDirection: 'column' as const
-    },
-    cardBack: {
-      position: 'absolute' as const,
-      width: '100%',
-      height: '100%',
-      backfaceVisibility: 'hidden' as const,
-      background: 'white',
-      borderRadius: '15px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      transform: 'rotateY(180deg)',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      overflowY: 'auto' as const
-    },
-    caregiverHeader: {
-      display: 'flex',
-      gap: '15px',
-      marginBottom: '15px',
-      paddingBottom: '15px',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    caregiverAvatar: {
-      width: '70px',
-      height: '70px',
-      borderRadius: '35px',
-      background: background,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '36px',
-      flexShrink: 0
-    },
-    caregiverInfo: {
-      flex: 1
-    },
-    nameRating: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      marginBottom: '5px'
-    },
-    caregiverName: {
-      fontSize: '18px',
-      fontWeight: 600,
-      color: '#333'
-    },
-    rating: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      fontSize: '14px'
-    },
-    star: {
-      color: secondPrimary
-    },
-    ratingCount: {
-      color: '#999'
-    },
-    certificationBadge: {
-      display: 'inline-block',
-      padding: '4px 10px',
-      background: '#dbeafe',
-      color: '#1e40af',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: 600,
-      marginRight: '6px'
-    },
-    experience: {
-      fontSize: '13px',
-      color: '#666',
-      marginTop: '5px'
-    },
-    caregiverBody: {
-      marginBottom: '15px'
-    },
-    specialtyTags: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
-      gap: '6px',
-      marginBottom: '12px'
-    },
-    specialtyTag: {
-      padding: '6px 12px',
-      background: '#f0f4ff',
-      color: firstPrimary,
-      borderRadius: '12px',
-      fontSize: '12px'
-    },
-    matchInfo: {
-      background: '#fce7f3',
-      border: `1px solid ${secondPrimary}`,
-      padding: '12px',
-      borderRadius: '10px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px'
-    },
-    matchIcon: {
-      fontSize: '24px'
-    },
-    matchText: {
-      flex: 1
-    },
-    matchScore: {
-      fontSize: '18px',
-      fontWeight: 700,
-      color: secondPrimary
-    },
-    matchDetail: {
-      fontSize: '11px',
-      color: secondPrimary,
-      cursor: 'pointer'
-    },
-    caregiverFooter: {
-      display: 'flex',
-      gap: '10px'
-    },
-    rate: {
-      fontSize: '16px',
-      fontWeight: 700,
-      color: firstPrimary,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0 10px'
-    },
-    actionBtn: {
-      flex: 1,
-      padding: '12px',
-      borderRadius: '10px',
-      border: '1px solid #e0e0e0',
-      background: 'white',
-      fontSize: '14px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      color: '#333'
-    },
-    actionBtnPrimary: {
-      background: firstPrimary,
-      color: 'white',
-      borderColor: firstPrimary
-    },
-    bottomSection: {
-      padding: '15px 20px',
-      background: background,
-      borderTop: '1px solid #f0f0f0'
-    },
-    showMoreBtn: {
-      width: '100%',
-      padding: '12px',
-      background: '#f9fafb',
-      color: firstPrimary,
-      border: '1px solid #e0e0e0',
-      borderRadius: '10px',
-      fontSize: '14px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      marginBottom: '10px'
-    },
-    skipBtn: {
-      width: '100%',
-      padding: '12px',
-      background: 'white',
-      color: '#999',
-      border: 'none',
-      fontSize: '14px',
-      cursor: 'pointer'
-    },
-    loadingContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '200px',
-      fontSize: '16px',
-      color: '#666'
+      // 페이지 이동
+      router.push('/mypage-mycaregiver')
+    } catch (err) {
+      console.error('[Caregiver Result List] Error selecting caregiver:', err)
+      // 에러 무시하고 계속 진행
+      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
+      if (caregiver.matching_id) {
+        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
+      }
+      router.push('/mypage-mycaregiver')
     }
   }
 
-
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: background }}>
-        <div style={styles.navBar}>
-          <button style={styles.backBtn} onClick={() => router.push('/caregiver-finder')}>‹</button>
-          <div style={styles.navTitle}>추천 간병인</div>
-          <button style={styles.filterBtn}>⚙️</button>
-        </div>
-        <div style={styles.loadingContainer}>
-          매칭 결과를 불러오는 중...
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 mb-4 bg-[#18d4c6] rounded-full">
+            <div className="w-6 h-6 border-2 border-[#18d4c6] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="font-semibold text-[#353535]">매칭 결과를 불러오는 중...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: background }}>
+    <div className="min-h-screen bg-white flex flex-col">
+      <style>{`
+        .flip-card {
+          perspective: 1000px;
+          cursor: pointer;
+        }
+
+        .flip-card-inner {
+          position: relative;
+          width: 100%;
+          height: 280px;
+          transition: transform 0.6s;
+          transform-style: preserve-3d;
+        }
+
+        .flip-card-inner.flipped {
+          transform: rotateY(180deg);
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+
+        .flip-card-back {
+          transform: rotateY(180deg);
+        }
+      `}</style>
+
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
-      <div style={styles.navBar}>
-        <button style={styles.backBtn} onClick={() => router.push('/caregiver-finder')}>‹</button>
-        <div style={styles.navTitle}>추천 간병인</div>
-        <button style={styles.filterBtn}>⚙️</button>
-      </div>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-4 h-[60px] flex items-center justify-between border-b border-gray-100">
+        <button
+          onClick={() => router.back()}
+          className="p-2 -ml-2 text-[#828282]"
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-bold text-[#353535]">추천 간병인</h1>
+        <button className="p-2 -mr-2 text-[#828282]">
+          <Bell className="w-6 h-6" />
+        </button>
+      </header>
 
-      <div style={styles.header}>
-        <h2 style={styles.h2}>환자분에게 적합한 간병인</h2>
-        <p style={styles.p}>{totalCount}명의 전문가를 찾았습니다</p>
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 px-6 pt-8 pb-8 overflow-y-auto">
+        {/* Title Section */}
+        <div className="mb-8">
+          <h2 className="text-[28px] font-bold text-[#353535] mb-2 leading-tight">
+            {patientName}님에게 적합한 간병인
+          </h2>
+          <p className="text-base font-bold text-[#828282]">
+            {matches.length}명의 전문가를 찾았습니다.
+          </p>
+        </div>
 
-      <div style={styles.content}>
+        {/* No Results */}
         {matches.length === 0 ? (
-          <div style={styles.loadingContainer}>
-            매칭된 간병인이 없습니다.
+          <div className="text-center py-12">
+            <p className="text-[#828282] font-semibold mb-4">매칭된 간병인을 찾을 수 없습니다.</p>
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-2 bg-[#18d4c6] text-white font-bold rounded-[10px] hover:bg-[#15b0a8] transition-colors"
+            >
+              돌아가기
+            </button>
           </div>
         ) : (
-          matches.map((caregiver, index) => {
-            const id = caregiver.matching_id?.toString() || index.toString()
-            const isFlipped = flippedCards[id] || false
+          /* Caregiver Cards */
+          <div className="space-y-6">
+            {matches.map((caregiver, index) => {
+              const isFlipped = flippedCards[caregiver.caregiver_id] || false
+              const isBest = index === 0
 
-            return (
-              <div key={id} style={styles.caregiverCard} onClick={() => handleCardClick(id)}>
-                <div style={styles.cardInner(isFlipped)}>
-                  {/* 앞면 */}
-                  <div style={styles.cardFront}>
-                    <div style={styles.caregiverHeader}>
-                      <div style={styles.caregiverAvatar}>
+              return (
+                <div
+                  key={caregiver.caregiver_id}
+                  className="flip-card rounded-[10px] border border-[#18d4c6] bg-white overflow-hidden shadow-[1px_3px_3px_rgba(74,73,73,0.25)]"
+                  onClick={() => toggleFlip(caregiver.caregiver_id)}
+                >
+                  <div className={cn('flip-card-inner', isFlipped && 'flipped')}>
+                    {/* Front Side - Basic Info */}
+                    <div className="flip-card-front px-4 pt-4 pb-3 flex flex-col gap-2">
+                      {/* Tags */}
+                      <div className="flex gap-2 mb-2 flex-wrap">
+                        <span className="bg-[#18d4c6] text-white text-sm font-bold px-3.5 py-[9px] rounded-[5px]">
+                          {caregiver.job_title}
+                        </span>
+                        <span className="bg-[#18d4c6] text-white text-sm font-bold px-3.5 py-[9px] rounded-[5px]">
+                          경력 {caregiver.experience_years}년
+                        </span>
+                      </div>
+
+                      {/* Profile Info */}
+                      <div className="flex items-start gap-3 mb-2">
                         {caregiver.profile_image_url ? (
                           <img
                             src={caregiver.profile_image_url}
                             alt={caregiver.caregiver_name}
-                            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                            className="w-[62px] h-[62px] rounded-full object-cover border border-gray-100 shrink-0"
                           />
                         ) : (
-                          getAvatarEmoji(caregiver.caregiver_name)
+                          <div className="w-[62px] h-[62px] rounded-full bg-[#e8fffd] border border-gray-100 flex items-center justify-center shrink-0 text-2xl">
+                            👤
+                          </div>
                         )}
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="text-lg font-bold text-[#353535] mb-0.5">{caregiver.caregiver_name}</span>
+                          <span className="text-xs text-[#828282] mb-1 line-clamp-2">
+                            {caregiver.specialties && Array.isArray(caregiver.specialties) && caregiver.specialties.length > 0
+                              ? caregiver.specialties.join(' / ')
+                              : '돌봄 서비스'}
+                          </span>
+                          <span className="text-sm font-bold text-[#353535]">
+                            ₩{caregiver.hourly_rate?.toLocaleString()}/시간
+                          </span>
+                        </div>
                       </div>
-                      <div style={styles.caregiverInfo}>
-                        <div style={styles.nameRating}>
-                          <span style={styles.caregiverName}>{caregiver.caregiver_name}</span>
-                        </div>
-                        <div style={styles.rating}>
-                          <span style={styles.star}>⭐</span>
-                          <span>{caregiver.avg_rating}</span>
-                        </div>
-                        <div style={{ marginTop: '8px' }}>
-                          <span style={{ fontSize: '14px' }}>{getGradeStars(caregiver.grade)}</span>
-                        </div>
-                        <div style={styles.experience}>경력 {caregiver.experience_years}년</div>
-                      </div>
-                    </div>
 
-                    <div style={styles.caregiverBody}>
-                      <div style={styles.specialtyTags}>
-                        {caregiver.specialties?.map((specialty, i) => (
-                          <span key={i} style={styles.specialtyTag}>{specialty}</span>
-                        ))}
-                      </div>
-                      <div style={styles.matchInfo}>
-                        <div style={styles.matchIcon}>✨</div>
-                        <div style={styles.matchText}>
-                          <div style={styles.matchScore}>{caregiver.match_score}% 매칭</div>
-                          <div style={styles.matchDetail}>▼ 매칭 근거 보기</div>
+                      {/* Match Score & Flip Button */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 text-[#828282]">
+                          <ChevronRight className="w-4 h-4" />
+                          <span className="text-xs">매칭 근거 확인하기</span>
                         </div>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 'auto' }}>
-                      <div style={styles.caregiverFooter}>
-                        <div style={styles.rate}>{caregiver.hourly_rate.toLocaleString()}원/시간</div>
-                        <button
-                          style={styles.actionBtn}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleCardClick(id)
-                          }}
+                        <span
+                          className={cn(
+                            'font-bold text-lg',
+                            caregiver.match_score >= 90 ? 'text-[#FF7E7E]' : 'text-[#828282]'
+                          )}
                         >
-                          상세 보기
-                        </button>
-                        <button
-                          style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSelectCaregiver(caregiver)
-                          }}
-                        >
-                          선택
-                        </button>
+                          {caregiver.match_score}% 매칭
+                        </span>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 뒷면 (상세 정보) */}
-                  <div style={styles.cardBack}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '15px' }}>상세 프로필</h3>
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>자기소개</div>
-                      <div style={{ fontSize: '15px', lineHeight: 1.6 }}>
-                        안녕하세요, {caregiver.caregiver_name}입니다.
-                        {caregiver.experience_years}년의 경력으로 환자분을 가족처럼 돌보겠습니다.
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>전문 분야</div>
-                      <div style={styles.specialtyTags}>
-                        {caregiver.specialties?.map((specialty, i) => (
-                          <span key={i} style={styles.specialtyTag}>{specialty}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 'auto' }}>
+                      {/* Divider */}
+                      <div className="h-px bg-gray-200 mb-2" />
+
+                      {/* Button */}
                       <button
-                        style={{ ...styles.actionBtn, width: '100%' }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleCardClick(id)
+                          handleSelectCaregiver(caregiver)
                         }}
+                        className="w-full py-3 border rounded-md text-base font-bold transition-colors bg-[#18d4c6] border-[#18d4c6] text-white hover:bg-[#15b0a8]"
                       >
-                        돌아가기
+                        선택하기
                       </button>
+                    </div>
+
+                    {/* Back Side - Matching Reason */}
+                    <div className="flip-card-back px-4 pt-4 pb-3 flex flex-col gap-2">
+                      {/* Title */}
+                      <div className="mb-1">
+                        <h3 className="text-base font-bold text-[#353535] mb-1">매칭 근거</h3>
+                        <div className="w-10 h-0.5 bg-[#18d4c6] rounded-full" />
+                      </div>
+
+                      {/* Matching Reason Text */}
+                      <p className="text-xs text-[#353535] leading-snug line-clamp-3 mb-2">
+                        {caregiver.matching_reason || '최선의 돌봄을 제공할 것입니다.'}
+                      </p>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-1.5 mb-2">
+                        <div className="text-center p-1.5 bg-[#e8fffd] rounded-lg">
+                          <div className="text-base font-bold text-[#18d4c6] leading-tight">
+                            {caregiver.match_score}%
+                          </div>
+                          <div className="text-xs text-[#828282] mt-0.5">호환도</div>
+                        </div>
+                        <div className="text-center p-1.5 bg-[#e8fffd] rounded-lg">
+                          <div className="text-base font-bold text-[#18d4c6] leading-tight">
+                            {caregiver.experience_years}년
+                          </div>
+                          <div className="text-xs text-[#828282] mt-0.5">경력</div>
+                        </div>
+                        <div className="text-center p-1.5 bg-[#e8fffd] rounded-lg">
+                          <div className="text-base font-bold text-[#18d4c6] leading-tight">
+                            {caregiver.avg_rating?.toFixed(1) || '0.0'}
+                          </div>
+                          <div className="text-xs text-[#828282] mt-0.5">평점</div>
+                        </div>
+                      </div>
+
+                      {/* Info text */}
+                      <p className="text-xs text-[#828282] text-center mt-auto">클릭하여 돌아가기</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )
-          })
+              )
+            })}
+          </div>
         )}
-      </div>
-
-      <div style={styles.bottomSection}>
-        <button style={styles.showMoreBtn}>더 많은 간병인 보기</button>
-        <button style={styles.skipBtn} onClick={() => router.push('/care-plans-create-1')}>
-          간병인 없이 진행하기
-        </button>
-      </div>
+      </main>
     </div>
   )
 }

@@ -164,9 +164,22 @@ async def recommend_caregivers_xgboost(
 
         # SQL LIKE 필터를 사용하여 실제 간병인 데이터 조회 (성격 정보 포함)
         # 예: 요양보호사 검색 시 "요양보호사 1급", "요양보호사 2급" 등 모두 매칭
-        caregivers = db.query(Caregiver).join(User).outerjoin(CaregiverPersonality).filter(
-            Caregiver.certifications.ilike(f'%{cert_keyword}%')
-        ).limit(request.top_k).all()
+        from sqlalchemy.orm import joinedload
+        caregivers = db.query(Caregiver)\
+            .join(User)\
+            .outerjoin(CaregiverPersonality)\
+            .options(joinedload(Caregiver.user))\
+            .filter(Caregiver.certifications.ilike(f'%{cert_keyword}%'))\
+            .limit(request.top_k * 2)\
+            .all()  # 필터링을 위해 더 많이 조회
+
+        logger.info(f"[XGBoost 추천] 조회된 간병인 수: {len(caregivers)}")
+        if caregivers:
+            first_caregiver = caregivers[0]
+            logger.info(f"[XGBoost 추천] 첫 번째 간병인: {first_caregiver.caregiver_id}")
+            logger.info(f"[XGBoost 추천] Specialties 칼럼값: {first_caregiver.specialties} (type: {type(first_caregiver.specialties)})")
+            if first_caregiver.specialties:
+                logger.info(f"[XGBoost 추천] Specialties 길이: {len(first_caregiver.specialties)}")
 
         if not caregivers:
             logger.warning(f"[XGBoost 추천] 조회된 간병인 없음")
@@ -191,6 +204,25 @@ async def recommend_caregivers_xgboost(
             patience_score = personality.patience_score if personality else 50
             independence_score = personality.independence_score if personality else 50
 
+            # specialties 파싱: PostgreSQL ARRAY 타입을 처리
+            # DB에서 {항목1,항목2,항목3} 또는 [항목1, 항목2] 형태로 올 수 있음
+            specialties = []
+            if caregiver.specialties:
+                try:
+                    # 이미 리스트/튜플인 경우
+                    if isinstance(caregiver.specialties, (list, tuple)):
+                        specialties = [str(s).strip() for s in caregiver.specialties if s]
+                    else:
+                        # 문자열인 경우: {항목1,항목2} 형태
+                        specs_str = str(caregiver.specialties)
+                        if specs_str.startswith('{') and specs_str.endswith('}'):
+                            specs_str = specs_str[1:-1]  # {} 제거
+                        # 쉼표로 구분된 항목 파싱
+                        specialties = [s.strip() for s in specs_str.split(',') if s.strip()]
+                except Exception as e:
+                    logger.warning(f"[XGBoost] specialties 파싱 실패: {caregiver.caregiver_id}, error: {e}")
+                    specialties = []
+
             caregivers_with_personality.append({
                 "caregiver_id": caregiver.caregiver_id,
                 "caregiver_name": caregiver.user.name if caregiver.user else "Unknown",
@@ -203,7 +235,7 @@ async def recommend_caregivers_xgboost(
                 "hourly_rate": caregiver.hourly_rate or 25000,
                 "avg_rating": float(caregiver.avg_rating) if caregiver.avg_rating else 4.5,
                 "profile_image_url": (caregiver.user.profile_image_url or "") if caregiver.user else "",
-                "specialties": caregiver.specialties or [],
+                "specialties": specialties,
             })
 
         # XGBoost 매칭 추천
