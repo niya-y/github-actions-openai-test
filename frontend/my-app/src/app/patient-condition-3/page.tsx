@@ -295,7 +295,7 @@ export default function PatientCondition3Page() {
             </div>
 
             {/* Allergy Input */}
-            <div className="space-y-2 mb-8">
+            <div className="space-y-2 mb-3">
               <label className="text-lg font-bold text-[#353535]">알러지 음식</label>
               <input
                 name="currentAllergy"
@@ -308,7 +308,7 @@ export default function PatientCondition3Page() {
               />
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-3">
               {allergyFoods.map((food, index) => (
                 <div key={index} className="inline-flex items-center gap-2 bg-red-100 text-red-900 px-3 py-2 rounded-full text-[14px]">
                   <span>{food}</span>
@@ -323,7 +323,7 @@ export default function PatientCondition3Page() {
             </div>
 
             {/* Restricted Food Input */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-4">
               <label className="text-lg font-bold text-[#353535]">식이 제한 음식</label>
               <input
                 name="currentRestriction"
