@@ -109,6 +109,7 @@ class CaregiverMatchResult(BaseModel):
     specialties: List[str] = []
     availability: List[str] = []
     matching_id: Optional[int] = None
+    matching_reason: str = Field(..., description="매칭 근거 설명")
 
 
 class XGBoostMatchingResponse(BaseModel):
@@ -202,6 +203,7 @@ async def recommend_caregivers_xgboost(
                 "hourly_rate": caregiver.hourly_rate or 25000,
                 "avg_rating": float(caregiver.avg_rating) if caregiver.avg_rating else 4.5,
                 "profile_image_url": (caregiver.user.profile_image_url or "") if caregiver.user else "",
+                "specialties": caregiver.specialties or [],
             })
 
         # XGBoost 매칭 추천

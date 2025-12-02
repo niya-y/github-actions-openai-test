@@ -207,6 +207,15 @@ class EnhancedMatchingService:
         Returns:
             프론트엔드 호환 형식
         """
+        # 매칭 근거 생성
+        matching_reason = EnhancedMatchingService.generate_matching_reason(
+            caregiver_name=recommendation.get("caregiver_name", ""),
+            experience_years=recommendation.get("experience_years", 0),
+            specialties=recommendation.get("specialties", []),
+            match_score=round(recommendation["matching_score"], 1),
+            personality_analysis=recommendation.get("personality_analysis", "")
+        )
+
         result = {
             "caregiver_id": recommendation["caregiver_id"],
             "caregiver_name": recommendation["caregiver_name"],
@@ -218,8 +227,9 @@ class EnhancedMatchingService:
             "avg_rating": recommendation["avg_rating"],
             "profile_image_url": recommendation["profile_image_url"],
             "personality_analysis": recommendation["personality_analysis"],
-            "specialties": [],  # 추후 구현
-            "availability": [],  # 추후 구현
+            "specialties": recommendation.get("specialties", []),
+            "availability": recommendation.get("availability", []),
+            "matching_reason": matching_reason,
         }
 
         if include_features and "features" in recommendation:
@@ -276,6 +286,75 @@ class EnhancedMatchingService:
         except Exception as e:
             logger.error(f"❌ 매칭 생성 실패: {e}")
             raise
+
+    @staticmethod
+    def generate_matching_reason(
+        caregiver_name: str,
+        experience_years: int,
+        specialties: List[str],
+        match_score: float,
+        personality_analysis: str = ""
+    ) -> str:
+        """
+        매칭 근거를 감정적/객관적 톤으로 자동 생성
+
+        Args:
+            caregiver_name: 간병인 이름
+            experience_years: 경력 년수
+            specialties: 전문 분야 리스트
+            match_score: 매칭 점수 (0-100)
+            personality_analysis: 성격 분석 내용
+
+        Returns:
+            감정적/객관적 매칭 근거 설명
+        """
+        try:
+            # 전문 분야 문자열화
+            specialties_str = ", ".join(specialties) if specialties else "돌봄 서비스"
+
+            # 경력 표현
+            if experience_years >= 10:
+                experience_phrase = f"{experience_years}년의 풍부한 경험을 가진"
+            elif experience_years >= 5:
+                experience_phrase = f"{experience_years}년의 경험을 가진"
+            elif experience_years >= 1:
+                experience_phrase = f"{experience_years}년의 경험을 가진"
+            else:
+                experience_phrase = "열정적인"
+
+            # 점수 기반 표현
+            if match_score >= 95:
+                score_phrase = f"{match_score:.0f}%의 매우 높은 호환도로 최우선 추천합니다."
+                confidence_tone = "완벽하게"
+            elif match_score >= 90:
+                score_phrase = f"{match_score:.0f}%의 높은 호환도로 강력히 추천합니다."
+                confidence_tone = "탁월하게"
+            elif match_score >= 85:
+                score_phrase = f"{match_score:.0f}%의 좋은 호환도로 추천합니다."
+                confidence_tone = "효과적으로"
+            elif match_score >= 80:
+                score_phrase = f"{match_score:.0f}%의 호환도입니다."
+                confidence_tone = "능숙하게"
+            else:
+                score_phrase = f"{match_score:.0f}%의 호환도입니다."
+                confidence_tone = "성실하게"
+
+            # 최종 문구 구성
+            matching_reason = (
+                f"{specialties_str} 관리에 "
+                f"{experience_phrase} {caregiver_name}님은 "
+                f"환자분의 다양한 필요를 {confidence_tone} 이해하고 "
+                f"맞춤형 돌봄을 제공할 것입니다. "
+                f"{score_phrase}"
+            )
+
+            logger.info(f"[매칭 근거 생성] {caregiver_name}: {score_phrase}")
+            return matching_reason
+
+        except Exception as e:
+            logger.error(f"❌ 매칭 근거 생성 실패: {e}")
+            # 기본 문구 반환
+            return f"{caregiver_name}님은 환자분을 위해 최선의 돌봄을 제공할 것입니다."
 
 
 # 애플리케이션 시작 시 초기화
