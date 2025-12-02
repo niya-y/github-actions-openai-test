@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { apiPost, apiGet } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import MedicationOCR from '@/components/MedicationOCR'
@@ -179,35 +179,41 @@ export default function PatientCondition3Page() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f9f7f2] overflow-hidden font-['Pretendard']">
+    <div className="min-h-screen bg-white flex flex-col">
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
-      <div className="flex items-center px-5 py-4 border-b border-gray-100 shrink-0">
-        <button
-          onClick={() => router.push('/patient-condition-2')}
-          className="text-[#18D4C6] bg-transparent border-none cursor-pointer"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <div className="flex-1 mx-5">
-          <div className="w-full h-1 bg-transparent rounded-sm flex gap-1">
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-gray-200 rounded-sm"></div>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-4 pt-4 pb-2">
+        <div className="flex items-center mb-4">
+          <button
+            onClick={() => router.push('/patient-condition-2')}
+            className="p-2 -ml-2 text-gray-600"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Progress Bar */}
+          <div className="flex-1 flex gap-2 ml-4 mr-2">
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-gray-200 rounded-full" />
           </div>
         </div>
-        <div className="w-8"></div> {/* Spacer to balance the header since Skip is removed */}
-      </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-8">
-        <div className="mb-8">
-          <h2 className="text-[26px] text-gray-800 mb-2">복용 중인 약이 있나요?</h2>
-          <p className="text-[14px] text-gray-600">정확한 복약 관리를 위해 필요합니다</p>
-        </div>
+        <div className="h-px bg-gray-100 -mx-4" />
+      </header>
 
+      <main className="flex-1 px-8 pt-6 pb-32 overflow-y-auto">
         <form onSubmit={handleSubmit}>
+          {/* Medication Section */}
+          <div className="mb-12">
+            <div className="mb-8">
+              <h1 className="text-[28px] font-bold text-[#353535] mb-2">복용 중인 약이 있나요?</h1>
+              <p className="text-base font-bold text-[#828282]">정확한 복약 관리를 위해 필요합니다.</p>
+            </div>
           {/* OCR 컴포넌트 - 실제 기능 */}
           {patientId && (
             <div className="mb-8">
@@ -243,14 +249,15 @@ export default function PatientCondition3Page() {
             </div>
           )}
 
-          <div className="mb-6">
-            <div className="text-[14px] font-semibold text-gray-800 mb-3">약물 목록</div>
+          {/* Medication List Input */}
+          <div className="space-y-2">
+            <label className="text-lg font-bold text-[#353535]">약물 목록</label>
             <div className="flex gap-2">
               <input
                 name="currentMed"
                 type="text"
-                className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl text-[15px] text-black bg-white"
-                placeholder="약 이름을 입력하세요 (예: 아스피린, 메트포민...)"
+                className="flex-1 h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
+                placeholder="약 이름을 입력하세요 (예:아스피린, 메트포민...)"
                 value={currentMed}
                 onChange={(e) => setCurrentMed(e.target.value)}
                 onKeyDown={handleAddMedication}
@@ -258,39 +265,42 @@ export default function PatientCondition3Page() {
               <button
                 type="button"
                 onClick={handleAddMedication}
-                className="px-4 py-4 bg-[#18D4C6] text-white font-semibold rounded-xl hover:bg-[#16c2b5] transition-colors shrink-0"
+                className="px-4 bg-[#18d4c6] text-white font-semibold rounded-[10px] hover:bg-[#15b0a8] transition-colors shrink-0"
               >
                 추가
               </button>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {medicine_names.map((med, index) => (
-              <div key={index} className="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-2 rounded-full text-[14px]">
-                <span>{med}</span>
-                <span
-                  className="cursor-pointer font-bold text-lg leading-none"
-                  onClick={() => handleRemoveMedication(index)}
-                >
-                  ×
-                </span>
-              </div>
-            ))}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {medicine_names.map((med, index) => (
+                <div key={index} className="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-2 rounded-full text-[14px]">
+                  <span>{med}</span>
+                  <span
+                    className="cursor-pointer font-bold text-lg leading-none"
+                    onClick={() => handleRemoveMedication(index)}
+                  >
+                    ×
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* 식이 선호 섹션 */}
-          <div className="mt-8 mb-6 pt-6 border-t border-gray-200">
-            <h3 className="text-[20px] text-gray-800 mb-2">식이 정보 (선택사항)</h3>
-            <p className="text-[13px] text-gray-600 mb-6">알러지나 식이 제한이 있으면 입력해주세요</p>
-
-            {/* 알러지 음식 */}
+          {/* Dietary Section */}
+          <div className="mb-8">
             <div className="mb-6">
-              <div className="text-[14px] font-semibold text-gray-800 mb-3">🚫 알러지 음식</div>
+              <h2 className="text-[28px] font-bold text-[#353535] mb-2">식이 정보 (선택사항)</h2>
+              <p className="text-base font-bold text-[#828282]">알러지나 식이 제한이 있으면 입력해주세요</p>
+            </div>
+
+            {/* Allergy Input */}
+            <div className="space-y-2 mb-8">
+              <label className="text-lg font-bold text-[#353535]">알러지 음식</label>
               <input
                 name="currentAllergy"
                 type="text"
-                className="w-full px-4 py-4 border-2 border-dashed border-red-200 rounded-xl text-[15px] text-black bg-white"
+                className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
                 placeholder="알러지 음식을 입력하세요 (예: 땅콩, 갑각류, 우유...)"
                 value={currentAllergy}
                 onChange={(e) => setCurrentAllergy(e.target.value)}
@@ -312,14 +322,14 @@ export default function PatientCondition3Page() {
               ))}
             </div>
 
-            {/* 식이 제한 음식 */}
-            <div className="mb-6">
-              <div className="text-[14px] font-semibold text-gray-800 mb-3">⚠️ 식이 제한 음식</div>
+            {/* Restricted Food Input */}
+            <div className="space-y-2">
+              <label className="text-lg font-bold text-[#353535]">식이 제한 음식</label>
               <input
                 name="currentRestriction"
                 type="text"
-                className="w-full px-4 py-4 border-2 border-dashed border-orange-200 rounded-xl text-[15px] text-black bg-white"
-                placeholder="피해야 할 음식을 입력하세요 (예: 짠 음식, 고지방 음식...)"
+                className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
+                placeholder="피해야 할 음식을 입력하세요 (예: 짠 음식, 고지방 음식)"
                 value={currentRestriction}
                 onChange={(e) => setCurrentRestriction(e.target.value)}
                 onKeyDown={handleAddRestriction}
@@ -341,17 +351,19 @@ export default function PatientCondition3Page() {
             </div>
           </div>
 
-          <div className="mt-8 pb-3">
+          {/* Button */}
+          <div className="mt-8 pb-32">
             <button
               type="submit"
-              disabled={loading}
-              className="w-full px-5 py-[18px] bg-[#18D4C6] text-white border-none rounded-xl text-[17px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || dataLoading}
+              className="w-full h-14 bg-[#18d4c6] rounded-[10px] flex items-center justify-center gap-1 shadow-[1px_1px_2px_rgba(125,140,139,0.5)] hover:bg-[#15b0a8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '저장 중...' : '다음'}
+              <span className="text-lg font-bold text-white">{loading ? '저장 중...' : '다음'}</span>
+              <ChevronRight className="w-6 h-6 text-white" />
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   )
 }
