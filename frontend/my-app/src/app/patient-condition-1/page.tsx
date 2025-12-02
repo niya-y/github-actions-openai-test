@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronDown, Edit2, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Edit2, Plus, Calendar } from 'lucide-react'
 import { apiPost, apiGet } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
+import { cn } from '@/utils/cn'
 import type { PatientResponse } from '@/types/api'
 
 interface PatientInfo {
@@ -246,31 +247,34 @@ export default function PatientCondition1Page() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#f9f7f2] overflow-hidden font-['Pretendard']">
+    <div className="min-h-screen bg-white flex flex-col">
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
-      {/* Navigation Bar with Progress */}
-      <div className="flex items-center px-5 py-4 border-b border-gray-100 shrink-0">
-        <button
-          onClick={() => router.push('/home')}
-          className="text-xl text-[#18D4C6] bg-transparent border-none cursor-pointer"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <div className="flex-1 mx-5">
-          <div className="w-full h-1 bg-transparent rounded-sm flex gap-1">
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-[#18D4C6] rounded-sm"></div>
-            <div className="flex-1 h-full bg-gray-200 rounded-sm"></div>
-            <div className="flex-1 h-full bg-gray-200 rounded-sm"></div>
-            <div className="flex-1 h-full bg-gray-200 rounded-sm"></div>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-4 pt-4 pb-2">
+        <div className="flex items-center mb-4">
+          <button
+            onClick={() => router.push('/home')}
+            className="p-2 -ml-2 text-gray-600"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Progress Bar */}
+          <div className="flex-1 flex gap-2 ml-4 mr-2">
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-gray-200 rounded-full" />
+            <div className="h-1 flex-1 bg-gray-200 rounded-full" />
+            <div className="h-1 flex-1 bg-gray-200 rounded-full" />
           </div>
         </div>
-        <div className="w-8"></div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-8">
+        <div className="h-px bg-gray-100 -mx-4" />
+      </header>
+
+      <main className="flex-1 px-8 pt-6 pb-8 overflow-y-auto">
         {dataLoading ? (
           // 로딩 상태
           <div className="flex items-center justify-center h-full">
@@ -283,8 +287,8 @@ export default function PatientCondition1Page() {
           // 보기 모드 (기존 환자 표시)
           <div>
             <div className="mb-10">
-              <h2 className="text-[28px] text-black mb-2">도움이 필요해요</h2>
-              <p className="text-[15px] text-black">케어 대상자의 기본 정보</p>
+              <h2 className="text-[28px] font-bold text-[#353535] mb-2">도움이 필요해요</h2>
+              <p className="text-base font-bold text-[#908d8d]">케어 대상자의 기본 정보</p>
             </div>
 
             {/* 환자 선택 드롭다운 (여러 환자가 있을 때만 표시) */}
@@ -372,22 +376,22 @@ export default function PatientCondition1Page() {
           // 수정 모드 또는 새 환자 추가 모드 (입력 폼)
           <div>
             <div className="mb-10">
-              <h2 className="text-[28px] text-black mb-2">도움이 필요해요</h2>
-              <p className="text-[15px] text-black">
+              <h2 className="text-[28px] font-bold text-[#353535] mb-2">도움이 필요해요</h2>
+              <p className="text-base font-bold text-[#908d8d]">
                 {mode === 'edit' ? '케어 대상자 정보를 수정해주세요' : '새로운 케어 대상자 정보를 입력해주세요'}
               </p>
             </div>
 
             <form onSubmit={handleSave} className="space-y-5">
               {/* Name */}
-              <div>
-                <label className="block text-sm font-semibold text-black mb-2">
-                  이름 <span className="text-[#F2643B]">*</span>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-black ml-1">
+                  이름<span className="text-[#ff8e8e]">*</span>
                 </label>
                 <input
                   name="name"
                   type="text"
-                  className="w-full px-4 py-4 border border-gray-200 rounded-xl text-base text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#18D4C6]"
+                  className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
                   placeholder="예: 김영희"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -396,118 +400,128 @@ export default function PatientCondition1Page() {
               </div>
 
               {/* Date of Birth */}
-              <div>
-                <label className="block text-sm font-semibold text-black mb-2">
-                  생년월일 <span className="text-[#F2643B]">*</span>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-black ml-1">
+                  생년월일<span className="text-[#ff8e8e]">*</span>
                 </label>
-                <input
-                  name="birthDate"
-                  type="date"
-                  className="w-full px-4 py-4 border border-gray-200 rounded-xl text-base text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#18D4C6]"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    name="birthDate"
+                    type="text"
+                    placeholder="연도-월-일"
+                    className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                    required
+                  />
+                  <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-800 pointer-events-none" />
+                </div>
               </div>
 
               {/* Gender */}
-              <div>
-                <label className="block text-sm font-semibold text-black mb-2">
-                  성별 <span className="text-[#F2643B]">*</span>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-black ml-1">
+                  성별<span className="text-[#ff8e8e]">*</span>
                 </label>
                 <div className="flex gap-2">
-                  <div
-                    className={`flex-1 px-4 py-4 border-2 rounded-xl text-center cursor-pointer transition-all ${
-                      formData.gender === 'Female'
-                        ? 'border-[#18D4C6] bg-blue-50'
-                        : 'border-gray-200 bg-white'
-                    } text-black font-semibold`}
+                  <button
+                    type="button"
                     onClick={() => setFormData({ ...formData, gender: 'Female' })}
+                    className={cn(
+                      "flex-1 h-12 rounded-[10px] border text-sm font-bold transition-colors",
+                      formData.gender === 'Female'
+                        ? 'bg-[#e8fffd] border-[#18d4c6] text-[#353535]'
+                        : 'bg-white border-[#828282] text-[#646464]'
+                    )}
                   >
                     여성
-                  </div>
-                  <div
-                    className={`flex-1 px-4 py-4 border-2 rounded-xl text-center cursor-pointer transition-all ${
-                      formData.gender === 'Male'
-                        ? 'border-[#18D4C6] bg-blue-50'
-                        : 'border-gray-200 bg-white'
-                    } text-black font-semibold`}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setFormData({ ...formData, gender: 'Male' })}
+                    className={cn(
+                      "flex-1 h-12 rounded-[10px] border text-sm font-bold transition-colors",
+                      formData.gender === 'Male'
+                        ? 'bg-[#e8fffd] border-[#18d4c6] text-[#353535]'
+                        : 'bg-white border-[#828282] text-[#646464]'
+                    )}
                   >
                     남성
-                  </div>
+                  </button>
                 </div>
               </div>
 
               {/* Relationship */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-black">
-                    보호자와 관계 <span className="text-[#F2643B]">*</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-sm font-bold text-black">
+                    보호자와의 관계<span className="text-[#ff8e8e]">*</span>
                   </label>
-                  <div className="flex items-center gap-2 cursor-pointer" onClick={toggleDirectInput}>
-                    <span className="text-xs text-gray-500">직접 입력</span>
-                    <div className={`w-10 h-6 rounded-full relative transition-colors ${formData.isDirectInput ? 'bg-[#18D4C6]' : 'bg-gray-300'}`}>
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${formData.isDirectInput ? 'left-[22px]' : 'left-1'}`}></div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#828282]">직접 입력</span>
+                    <button
+                      type="button"
+                      onClick={toggleDirectInput}
+                      className={cn(
+                        "w-[27px] h-[14px] rounded-full transition-colors relative",
+                        formData.isDirectInput ? "bg-[#18d4c6]" : "bg-[#d9d9d9]"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
+                        formData.isDirectInput ? "left-[15px]" : "left-0.5"
+                      )} />
+                    </button>
                   </div>
                 </div>
 
-                {formData.isDirectInput ? (
-                  <input
-                    name="relationship"
-                    type="text"
-                    className="w-full px-4 py-4 border border-gray-200 rounded-xl text-base text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#18D4C6]"
-                    placeholder="관계를 입력해주세요"
-                    value={formData.relationship}
-                    onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                    required
-                  />
-                ) : (
-                  <div className="relative">
-                    <select
+                <div className="relative">
+                  {formData.isDirectInput ? (
+                    <input
                       name="relationship"
-                      className="w-full px-4 py-4 border border-gray-200 rounded-xl text-base text-black bg-white appearance-none pr-10 focus:outline-none focus:ring-2 focus:ring-[#18D4C6]"
+                      type="text"
+                      placeholder="관계를 입력해주세요"
+                      className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm placeholder:text-[#828282] focus:outline-none focus:border-[#18d4c6]"
                       value={formData.relationship}
                       onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
                       required
-                    >
-                      <option value="">선택해주세요</option>
-                      <option value="어머니">어머니</option>
-                      <option value="아버지">아버지</option>
-                      <option value="배우자">배우자</option>
-                      <option value="조부모">조부모</option>
-                      <option value="기타">기타</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                      <ChevronDown className="w-5 h-5" />
-                    </div>
-                  </div>
-                )}
+                    />
+                  ) : (
+                    <>
+                      <select
+                        name="relationship"
+                        className="w-full h-12 px-5 rounded-[10px] border border-[#828282] text-sm text-[#353535] appearance-none bg-white focus:outline-none focus:border-[#18d4c6]"
+                        value={formData.relationship}
+                        onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
+                        required
+                      >
+                        <option value="" disabled>선택해주세요</option>
+                        <option value="어머니">어머니</option>
+                        <option value="아버지">아버지</option>
+                        <option value="배우자">배우자</option>
+                        <option value="조부모">조부모</option>
+                        <option value="기타">기타</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Buttons */}
-              <div className="mt-8 pb-3 space-y-3">
+              <div className="mt-8">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full px-5 py-[18px] bg-[#18D4C6] text-white border-none rounded-xl text-[17px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-14 bg-[#18d4c6] rounded-[10px] flex items-center justify-center shadow-[1px_1px_2px_rgba(125,140,139,0.5)] hover:bg-[#15b0a8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? '저장 중...' : '저장'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={submitting}
-                  className="w-full px-5 py-[18px] bg-white text-gray-700 border border-gray-200 rounded-xl text-[17px] font-semibold cursor-pointer hover:bg-gray-50"
-                >
-                  취소
+                  <span className="text-lg font-bold text-white">{submitting ? '저장 중...' : '저장'}</span>
                 </button>
               </div>
             </form>
           </div>
         ) : null}
-      </div>
+      </main>
     </div>
   )
 }
