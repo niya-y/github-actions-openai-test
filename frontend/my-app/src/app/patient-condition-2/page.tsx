@@ -185,16 +185,15 @@ export default function PatientCondition2Page() {
                       : "bg-white border-[#828282]"
                   )}
                 >
-                  <div className="w-12 h-12 relative flex items-center justify-center">
+                  <div className={cn(
+                    "relative flex items-center justify-center",
+                    isStroke ? "w-9 h-9" : "w-10 h-10"
+                  )}>
                     <Image
                       src={isSelected ? disease.activeIcon : disease.icon}
                       alt={disease.name}
-                      width={isStroke ? 36 : 40}
-                      height={isStroke ? 36 : 40}
-                      className={cn(
-                        "object-contain",
-                        isStroke ? "w-9 h-9" : "w-10 h-10"
-                      )}
+                      fill
+                      className="object-contain"
                     />
                   </div>
                   <span className={cn(
