@@ -45,29 +45,37 @@ export default function HomePage() {
       try {
         const token = localStorage.getItem('access_token')
         if (!token) {
-          console.log('[Home] No token found')
-          setLoading(false)
+          console.log('[Home] No token found, redirecting to login')
+          router.push('/login')
           return
         }
 
         // 환자 목록 조회 (최신순)
-        const response = await apiGet<any>('/api/patients/me')
-        console.log('[Home] Patients data:', response)
+        try {
+          const response = await apiGet<any>('/api/patients/me')
+          console.log('[Home] Patients data:', response)
 
-        if (response?.patients && response.patients.length > 0) {
-          setPatients(response.patients)
+          if (response?.patients && response.patients.length > 0) {
+            setPatients(response.patients)
 
-          // sessionStorage에서 선택된 환자 확인
-          const savedPatientId = sessionStorage.getItem('selected_patient_id')
+            // sessionStorage에서 선택된 환자 확인
+            const savedPatientId = sessionStorage.getItem('selected_patient_id')
 
-          if (savedPatientId) {
-            // 저장된 환자가 있으면 그 환자 선택
-            const selectedPatient = response.patients.find(
-              (p: Patient) => p.patient_id === parseInt(savedPatientId)
-            )
-            if (selectedPatient) {
-              setPatientId(selectedPatient.patient_id)
-              setPatientName(selectedPatient.name)
+            if (savedPatientId) {
+              // 저장된 환자가 있으면 그 환자 선택
+              const selectedPatient = response.patients.find(
+                (p: Patient) => p.patient_id === parseInt(savedPatientId)
+              )
+              if (selectedPatient) {
+                setPatientId(selectedPatient.patient_id)
+                setPatientName(selectedPatient.name)
+              } else {
+                // 저장된 환자가 없으면 최신 환자 선택
+                const latestPatient = response.latest_patient || response.patients[0]
+                setPatientId(latestPatient.patient_id)
+                setPatientName(latestPatient.name)
+                sessionStorage.setItem('selected_patient_id', latestPatient.patient_id.toString())
+              }
             } else {
               // 저장된 환자가 없으면 최신 환자 선택
               const latestPatient = response.latest_patient || response.patients[0]
@@ -76,11 +84,18 @@ export default function HomePage() {
               sessionStorage.setItem('selected_patient_id', latestPatient.patient_id.toString())
             }
           } else {
-            // 저장된 환자가 없으면 최신 환자 선택
-            const latestPatient = response.latest_patient || response.patients[0]
-            setPatientId(latestPatient.patient_id)
-            setPatientName(latestPatient.name)
-            sessionStorage.setItem('selected_patient_id', latestPatient.patient_id.toString())
+            console.log('[Home] No patients found')
+            setPatients([])
+            setPatientName("환자 등록 필요")
+          }
+        } catch (apiError: any) {
+          // 404는 보호자 정보가 없거나 환자가 없는 경우 (정상적인 흐름일 수 있음)
+          if (apiError.message?.includes('404') || apiError.status === 404) {
+             console.log('[Home] Guardian profile or patients not found (User needs registration)')
+             setPatients([])
+             setPatientName("환자 등록 필요")
+          } else {
+             console.error('[Home] API Error:', apiError)
           }
         }
       } catch (err) {
@@ -165,9 +180,8 @@ export default function HomePage() {
                         <button
                           key={patient.patient_id}
                           onClick={() => handleSelectPatient(patient)}
-                          className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-colors duration-150 ${
-                            index !== patients.length - 1 ? 'border-b border-[#f0f0f0]' : ''
-                          }`}
+                          className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-colors duration-150 ${index !== patients.length - 1 ? 'border-b border-[#f0f0f0]' : ''
+                            }`}
                         >
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-[#353535]">{patient.name}</span>

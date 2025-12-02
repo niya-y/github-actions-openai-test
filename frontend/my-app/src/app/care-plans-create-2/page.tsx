@@ -35,7 +35,7 @@ export default function Screen9Schedule() {
   }, [activeTab])
 
   const fetchCarePlans = async () => {
-    const patientId = sessionStorage.getItem('selected_patient_id')
+    const patientId = sessionStorage.getItem('patient_id')
     if (!patientId) {
       setLoading(false)
       return
@@ -61,7 +61,7 @@ export default function Screen9Schedule() {
   }
 
   const fetchMealPlan = async () => {
-    const patientId = sessionStorage.getItem('selected_patient_id')
+    const patientId = sessionStorage.getItem('patient_id')
     if (!patientId) {
       setMealLoading(false)
       return

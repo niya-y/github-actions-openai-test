@@ -226,14 +226,14 @@ export default function Mypage2({ onNavigate }: Mypage2Props) {
         </div>
       </div>
 
-      <div style={{...styles.message, ...styles.messageSent}}>
+      <div style={{ ...styles.message, ...styles.messageSent }}>
         <div style={styles.messageAvatar}>👩</div>
         <div style={styles.messageContent}>
           <div style={styles.messageHeader}>
             <span style={styles.messageName}>나</span>
             <span style={styles.messageTime}>14:38</span>
           </div>
-          <div style={{...styles.messageBubble, ...styles.messageBubbleSent}}>
+          <div style={{ ...styles.messageBubble, ...styles.messageBubbleSent }}>
             아, 그러셨구나. 토요일에 갈게요! 혹시 좋아하시는 간식 있을까요?
           </div>
         </div>
@@ -252,14 +252,14 @@ export default function Mypage2({ onNavigate }: Mypage2Props) {
         </div>
       </div>
 
-      <div style={{...styles.message, ...styles.messageSent}}>
+      <div style={{ ...styles.message, ...styles.messageSent }}>
         <div style={styles.messageAvatar}>👨</div>
         <div style={styles.messageContent}>
           <div style={styles.messageHeader}>
             <span style={styles.messageName}>아들 이준호</span>
             <span style={styles.messageTime}>14:42</span>
           </div>
-          <div style={{...styles.messageBubble, ...styles.messageBubbleSent}}>
+          <div style={{ ...styles.messageBubble, ...styles.messageBubbleSent }}>
             알겠습니다. 제가 사갈게요.
           </div>
         </div>
@@ -270,26 +270,26 @@ export default function Mypage2({ onNavigate }: Mypage2Props) {
   return (
     <div style={styles.container}>
       <div style={styles.navBar}>
-        <button style={styles.backBtn} onClick={() => router.push('/dashboard')}>‹</button>
+        <button style={styles.backBtn} onClick={() => router.push('/home')}>‹</button>
         <div style={styles.navTitle}>메시지</div>
-        <div style={{width: '20px'}}></div>
+        <div style={{ width: '20px' }}></div>
       </div>
 
       <div style={styles.tabBar}>
         <button
-          style={{...styles.tab, ...(activeTab === 'chat' ? styles.tabActive : {})}}
+          style={{ ...styles.tab, ...(activeTab === 'chat' ? styles.tabActive : {}) }}
           onClick={() => setActiveTab('chat')}
         >
           대화
         </button>
         <button
-          style={{...styles.tab, ...(activeTab === 'notice' ? styles.tabActive : {})}}
+          style={{ ...styles.tab, ...(activeTab === 'notice' ? styles.tabActive : {}) }}
           onClick={() => setActiveTab('notice')}
         >
           공지
         </button>
         <button
-          style={{...styles.tab, ...(activeTab === 'notes' ? styles.tabActive : {})}}
+          style={{ ...styles.tab, ...(activeTab === 'notes' ? styles.tabActive : {}) }}
           onClick={() => setActiveTab('notes')}
         >
           공유 메모
@@ -299,78 +299,78 @@ export default function Mypage2({ onNavigate }: Mypage2Props) {
       <div style={styles.content}>
         {activeTab === 'chat' && renderChatContent()}
         {activeTab === 'notice' && (
-          <div style={{padding: '15px'}}>
-            <div style={{background: 'white', borderRadius: '12px', padding: '15px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-                <span style={{fontSize: '20px'}}>📢</span>
-                <span style={{fontWeight: 600, color: 'black', fontSize: '14px'}}>간병인 일정 변경 요청</span>
-                <span style={{fontSize: '12px', color: 'black', marginLeft: 'auto'}}>2시간 전</span>
+          <div style={{ padding: '15px' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '15px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '20px' }}>📢</span>
+                <span style={{ fontWeight: 600, color: 'black', fontSize: '14px' }}>간병인 일정 변경 요청</span>
+                <span style={{ fontSize: '12px', color: 'black', marginLeft: 'auto' }}>2시간 전</span>
               </div>
-              <div style={{fontSize: '13px', lineHeight: 1.5, color: 'black', marginBottom: '10px'}}>
+              <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'black', marginBottom: '10px' }}>
                 병원 진료가 있어 출근 시간을 10시로 조정 가능할까요?
               </div>
-              <div style={{display: 'flex', gap: '8px'}}>
-                <button style={{flex: 1, padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px', cursor: 'pointer', background: firstPrimary, color: 'white', fontWeight: 500}}>승인</button>
-                <button style={{flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black'}}>거절</button>
-                <button style={{flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black'}}>대화하기</button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px', cursor: 'pointer', background: firstPrimary, color: 'white', fontWeight: 500 }}>승인</button>
+                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black' }}>거절</button>
+                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black' }}>대화하기</button>
               </div>
             </div>
 
-            <div style={{background: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-                <span style={{fontSize: '20px'}}>🔔</span>
-                <span style={{fontWeight: 600, color: 'black', fontSize: '14px'}}>약물 재처방 필요</span>
-                <span style={{fontSize: '12px', color: 'black', marginLeft: 'auto'}}>1일 전</span>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '20px' }}>🔔</span>
+                <span style={{ fontWeight: 600, color: 'black', fontSize: '14px' }}>약물 재처방 필요</span>
+                <span style={{ fontSize: '12px', color: 'black', marginLeft: 'auto' }}>1일 전</span>
               </div>
-              <div style={{fontSize: '13px', lineHeight: 1.5, color: 'black', marginBottom: '10px'}}>
+              <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'black', marginBottom: '10px' }}>
                 메트포민 500mg의 복용 가능 일수가 3일 남았습니다. 병원 예약을 고려해주세요.
               </div>
-              <div style={{display: 'flex', gap: '8px'}}>
-                <button style={{flex: 1, padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px', cursor: 'pointer', background: firstPrimary, color: 'white', fontWeight: 500}}>병원 예약하기</button>
-                <button style={{flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black'}}>나중에 알림</button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px', cursor: 'pointer', background: firstPrimary, color: 'white', fontWeight: 500 }}>병원 예약하기</button>
+                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '13px', cursor: 'pointer', background: 'white', fontWeight: 500, color: 'black' }}>나중에 알림</button>
               </div>
             </div>
           </div>
         )}
         {activeTab === 'notes' && (
-          <div style={{padding: '15px'}}>
-            <button style={{width: '100%', padding: '15px', background: firstPrimary, color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+          <div style={{ padding: '15px' }}>
+            <button style={{ width: '100%', padding: '15px', background: firstPrimary, color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <span>➕</span>
               <span>새 메모 추가</span>
             </button>
 
-            <div style={{background: 'white', borderRadius: '12px', padding: '15px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px'}}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '15px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <span>📝</span>
-                <span style={{flex: 1, fontWeight: 600, color: 'black', fontSize: '14px'}}>11/10 병원 진료 요약</span>
-                <span style={{fontSize: '12px', color: 'black'}}>딸 박지은</span>
+                <span style={{ flex: 1, fontWeight: 600, color: 'black', fontSize: '14px' }}>11/10 병원 진료 요약</span>
+                <span style={{ fontSize: '12px', color: 'black' }}>딸 박지은</span>
               </div>
-              <div style={{fontSize: '13px', lineHeight: 1.6, color: 'black', marginBottom: '10px'}}>
+              <div style={{ fontSize: '13px', lineHeight: 1.6, color: 'black', marginBottom: '10px' }}>
                 • 담당의: 김OO 선생님<br />
                 • 진료 내용: 혈압약 용량 조정<br />
                 • 변경 사항: 암로디핀 5mg → 10mg<br />
                 • 다음 진료: 12/10 (한 달 후)
               </div>
-              <div style={{display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '10px', borderTop: '1px solid #f0f0f0', fontSize: '12px', color: 'black'}}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '10px', borderTop: '1px solid #f0f0f0', fontSize: '12px', color: 'black' }}>
                 <span>💬 댓글 2개</span>
                 <span>•</span>
                 <span>2일 전</span>
               </div>
             </div>
 
-            <div style={{background: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px'}}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <span>📝</span>
-                <span style={{flex: 1, fontWeight: 600, color: 'black', fontSize: '14px'}}>좋아하시는 음식 목록</span>
-                <span style={{fontSize: '12px', color: 'black'}}>간병인 김미숙</span>
+                <span style={{ flex: 1, fontWeight: 600, color: 'black', fontSize: '14px' }}>좋아하시는 음식 목록</span>
+                <span style={{ fontSize: '12px', color: 'black' }}>간병인 김미숙</span>
               </div>
-              <div style={{fontSize: '13px', lineHeight: 1.6, color: 'black', marginBottom: '10px'}}>
+              <div style={{ fontSize: '13px', lineHeight: 1.6, color: 'black', marginBottom: '10px' }}>
                 ✅ 호박죽<br />
                 ✅ 닭가슴살 샐러드<br />
                 ✅ 두부 조림<br />
                 ❌ 자극적인 찌개류 (속 안 좋아하심)
               </div>
-              <div style={{display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '10px', borderTop: '1px solid #f0f0f0', fontSize: '12px', color: 'black'}}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '10px', borderTop: '1px solid #f0f0f0', fontSize: '12px', color: 'black' }}>
                 <span>💬 댓글 5개</span>
                 <span>•</span>
                 <span>5일 전</span>

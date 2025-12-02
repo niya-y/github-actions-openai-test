@@ -13,6 +13,7 @@ export default function CaregiverResultList() {
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [flippedCards, setFlippedCards] = useState<{ [key: string]: boolean }>({})
 
   useEffect(() => {
     const fetchMatchingResults = async () => {
@@ -105,6 +106,13 @@ export default function CaregiverResultList() {
     }
   }
 
+  const handleCardClick = (id: string) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
+
   const getAvatarEmoji = (name: string) => {
     // 이름에 따라 다른 아바타 표시
     if (name.includes('미숙') || name.includes('은영')) return '👩‍⚕️'
@@ -167,11 +175,46 @@ export default function CaregiverResultList() {
       background: background
     },
     caregiverCard: {
+      background: 'transparent',
+      marginBottom: '15px',
+      perspective: '1000px',
+      height: '400px', // 고정 높이 필요
+      cursor: 'pointer'
+    },
+    cardInner: (isFlipped: boolean) => ({
+      position: 'relative' as const,
+      width: '100%',
+      height: '100%',
+      textAlign: 'left' as const,
+      transition: 'transform 0.6s',
+      transformStyle: 'preserve-3d' as const,
+      transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+    }),
+    cardFront: {
+      position: 'absolute' as const,
+      width: '100%',
+      height: '100%',
+      backfaceVisibility: 'hidden' as const,
       background: 'white',
       borderRadius: '15px',
       padding: '20px',
-      marginBottom: '15px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+      display: 'flex',
+      flexDirection: 'column' as const
+    },
+    cardBack: {
+      position: 'absolute' as const,
+      width: '100%',
+      height: '100%',
+      backfaceVisibility: 'hidden' as const,
+      background: 'white',
+      borderRadius: '15px',
+      padding: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+      transform: 'rotateY(180deg)',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      overflowY: 'auto' as const
     },
     caregiverHeader: {
       display: 'flex',
@@ -375,62 +418,116 @@ export default function CaregiverResultList() {
             매칭된 간병인이 없습니다.
           </div>
         ) : (
-          matches.map((caregiver, index) => (
-            <div key={caregiver.matching_id ?? index} style={styles.caregiverCard}>
-              <div style={styles.caregiverHeader}>
-                <div style={styles.caregiverAvatar}>
-                  {caregiver.profile_image_url ? (
-                    <img
-                      src={caregiver.profile_image_url}
-                      alt={caregiver.caregiver_name}
-                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    getAvatarEmoji(caregiver.caregiver_name)
-                  )}
-                </div>
-                <div style={styles.caregiverInfo}>
-                  <div style={styles.nameRating}>
-                    <span style={styles.caregiverName}>{caregiver.caregiver_name}</span>
-                  </div>
-                  <div style={styles.rating}>
-                    <span style={styles.star}>⭐</span>
-                    <span>{caregiver.avg_rating}</span>
-                  </div>
-                  <div style={{ marginTop: '8px' }}>
-                    <span style={{ fontSize: '14px' }}>{getGradeStars(caregiver.grade)}</span>
-                  </div>
-                  <div style={styles.experience}>경력 {caregiver.experience_years}년</div>
-                </div>
-              </div>
+          matches.map((caregiver, index) => {
+            const id = caregiver.matching_id?.toString() || index.toString()
+            const isFlipped = flippedCards[id] || false
 
-              <div style={styles.caregiverBody}>
-                <div style={styles.specialtyTags}>
-                  {caregiver.specialties?.map((specialty, i) => (
-                    <span key={i} style={styles.specialtyTag}>{specialty}</span>
-                  ))}
-                </div>
-                <div style={styles.matchInfo}>
-                  <div style={styles.matchIcon}>✨</div>
-                  <div style={styles.matchText}>
-                    <div style={styles.matchScore}>{caregiver.match_score}% 매칭</div>
-                    <div style={styles.matchDetail}>▼ 매칭 근거 보기</div>
+            return (
+              <div key={id} style={styles.caregiverCard} onClick={() => handleCardClick(id)}>
+                <div style={styles.cardInner(isFlipped)}>
+                  {/* 앞면 */}
+                  <div style={styles.cardFront}>
+                    <div style={styles.caregiverHeader}>
+                      <div style={styles.caregiverAvatar}>
+                        {caregiver.profile_image_url ? (
+                          <img
+                            src={caregiver.profile_image_url}
+                            alt={caregiver.caregiver_name}
+                            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          getAvatarEmoji(caregiver.caregiver_name)
+                        )}
+                      </div>
+                      <div style={styles.caregiverInfo}>
+                        <div style={styles.nameRating}>
+                          <span style={styles.caregiverName}>{caregiver.caregiver_name}</span>
+                        </div>
+                        <div style={styles.rating}>
+                          <span style={styles.star}>⭐</span>
+                          <span>{caregiver.avg_rating}</span>
+                        </div>
+                        <div style={{ marginTop: '8px' }}>
+                          <span style={{ fontSize: '14px' }}>{getGradeStars(caregiver.grade)}</span>
+                        </div>
+                        <div style={styles.experience}>경력 {caregiver.experience_years}년</div>
+                      </div>
+                    </div>
+
+                    <div style={styles.caregiverBody}>
+                      <div style={styles.specialtyTags}>
+                        {caregiver.specialties?.map((specialty, i) => (
+                          <span key={i} style={styles.specialtyTag}>{specialty}</span>
+                        ))}
+                      </div>
+                      <div style={styles.matchInfo}>
+                        <div style={styles.matchIcon}>✨</div>
+                        <div style={styles.matchText}>
+                          <div style={styles.matchScore}>{caregiver.match_score}% 매칭</div>
+                          <div style={styles.matchDetail}>▼ 매칭 근거 보기</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 'auto' }}>
+                      <div style={styles.caregiverFooter}>
+                        <div style={styles.rate}>{caregiver.hourly_rate.toLocaleString()}원/시간</div>
+                        <button
+                          style={styles.actionBtn}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCardClick(id)
+                          }}
+                        >
+                          상세 보기
+                        </button>
+                        <button
+                          style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectCaregiver(caregiver)
+                          }}
+                        >
+                          선택
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 뒷면 (상세 정보) */}
+                  <div style={styles.cardBack}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '15px' }}>상세 프로필</h3>
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>자기소개</div>
+                      <div style={{ fontSize: '15px', lineHeight: 1.6 }}>
+                        안녕하세요, {caregiver.caregiver_name}입니다.
+                        {caregiver.experience_years}년의 경력으로 환자분을 가족처럼 돌보겠습니다.
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>전문 분야</div>
+                      <div style={styles.specialtyTags}>
+                        {caregiver.specialties?.map((specialty, i) => (
+                          <span key={i} style={styles.specialtyTag}>{specialty}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 'auto' }}>
+                      <button
+                        style={{ ...styles.actionBtn, width: '100%' }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCardClick(id)
+                        }}
+                      >
+                        돌아가기
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div style={styles.caregiverFooter}>
-                <div style={styles.rate}>{caregiver.hourly_rate.toLocaleString()}원/시간</div>
-                <button style={styles.actionBtn}>프로필 보기</button>
-                <button
-                  style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}
-                  onClick={() => handleSelectCaregiver(caregiver)}
-                >
-                  선택
-                </button>
-              </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
 

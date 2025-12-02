@@ -24,16 +24,26 @@ export default function PatientCondition3Page() {
   const [restrictionFoods, setRestrictionFoods] = useState<string[]>([])
 
 
-  const handleAddMedication = (e?: React.KeyboardEvent) => {
-    if (e && e.key !== 'Enter') return
+  const handleAddMedication = (e?: React.KeyboardEvent | React.MouseEvent) => {
+    // KeyboardEvent인 경우 Enter 키만 처리
+    if (e && 'key' in e && e.key !== 'Enter') return
+
     if (currentMed.trim()) {
-      setMedicineNames([...medicine_names, currentMed.trim()])
+      const updated = [...medicine_names, currentMed.trim()]
+      setMedicineNames(updated)
       setCurrentMed('')
+
+      // ✅ 세션에 저장 (선택사항)
+      sessionStorage.setItem('medicine_names', JSON.stringify(updated))
     }
   }
 
   const handleRemoveMedication = (index: number) => {
-    setMedicineNames(medicine_names.filter((_, i) => i !== index))
+    const updated = medicine_names.filter((_, i) => i !== index)
+    setMedicineNames(updated)
+
+    // ✅ 세션 업데이트
+    sessionStorage.setItem('medicine_names', JSON.stringify(updated))
   }
 
   // 알러지 음식 추가/삭제
@@ -66,7 +76,7 @@ export default function PatientCondition3Page() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const patientIdFromStorage = sessionStorage.getItem('selected_patient_id')
+        const patientIdFromStorage = sessionStorage.getItem('patient_id')
         if (!patientIdFromStorage) {
           setDataLoading(false)
           return
@@ -74,7 +84,7 @@ export default function PatientCondition3Page() {
 
         setPatientId(Number(patientIdFromStorage))
 
-        // 약물 정보 로드
+        // 약물 정보 로드 (선택사항 - 실패해도 진행)
         try {
           const medResponse = await apiGet<any>(`/api/patients/${patientIdFromStorage}/medications`)
           console.log('[PatientCondition3] Medications loaded:', medResponse)
@@ -82,7 +92,8 @@ export default function PatientCondition3Page() {
             setMedicineNames(medResponse.medicine_names)
           }
         } catch (err) {
-          console.log('[PatientCondition3] No existing medication data:', err)
+          console.log('[PatientCondition3] 기존 약물 정보 없음 (첫 등록):', err)
+          // 에러 무시 - 새로운 환자일 수 있음
         }
 
         // 식이 선호 정보 로드
@@ -109,7 +120,7 @@ export default function PatientCondition3Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const patientId = sessionStorage.getItem('selected_patient_id')
+    const patientId = sessionStorage.getItem('patient_id')
     if (!patientId) {
       alert('환자 정보를 먼저 등록해주세요.')
       router.push('/patient-condition-1')
@@ -207,40 +218,51 @@ export default function PatientCondition3Page() {
                   // OCR에서 추출된 약물을 기존 목록에 병합
                   setMedicineNames((prev) => {
                     const newMedicines = medicines.filter((m) => !prev.includes(m))
-                    return [...prev, ...newMedicines]
+                    const updated = [...prev, ...newMedicines]
+
+                    // ✅ 세션에 저장
+                    sessionStorage.setItem('medicine_names', JSON.stringify(updated))
+
+                    return updated
                   })
                 }}
                 onConfirmMedicines={(medicines) => {
                   console.log('[PatientCondition3] 사용자가 약물 선택 확정:', medicines)
-                  // 약물 목록에 표시됨 (onMedicinesSelected에서 이미 추가됨)
+                  // "확인" 버튼 클릭 시 약물 목록에 추가
+                  setMedicineNames((prev) => {
+                    const newMedicines = medicines.filter((m) => !prev.includes(m))
+                    const updated = [...prev, ...newMedicines]
+
+                    // ✅ 세션에 저장
+                    sessionStorage.setItem('medicine_names', JSON.stringify(updated))
+
+                    return updated
+                  })
                 }}
               />
             </div>
           )}
 
-          {/* 기존 옵션들 (OCR 아래) */}
-          <div className="bg-gray-50 rounded-2xl p-5 mb-6">
-            <div className="text-[12px] font-semibold text-gray-600 mb-3">또는 다음 방법을 사용하세요</div>
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
-              <div className="text-4xl shrink-0">✏️</div>
-              <div className="flex-1">
-                <div className="text-[15px] font-semibold text-gray-800 mb-1">약 이름 직접 입력</div>
-                <div className="text-[12px] text-gray-600">자동완성 지원</div>
-              </div>
-            </div>
-          </div>
-
           <div className="mb-6">
             <div className="text-[14px] font-semibold text-gray-800 mb-3">약물 목록</div>
-            <input
-              name="currentMed"
-              type="text"
-              className="w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl text-[15px] text-black bg-white"
-              placeholder="약 이름을 입력하세요 (예: 아스피린, 메트포민...)"
-              value={currentMed}
-              onChange={(e) => setCurrentMed(e.target.value)}
-              onKeyDown={handleAddMedication}
-            />
+            <div className="flex gap-2">
+              <input
+                name="currentMed"
+                type="text"
+                className="flex-1 px-4 py-4 border-2 border-dashed border-gray-200 rounded-xl text-[15px] text-black bg-white"
+                placeholder="약 이름을 입력하세요 (예: 아스피린, 메트포민...)"
+                value={currentMed}
+                onChange={(e) => setCurrentMed(e.target.value)}
+                onKeyDown={handleAddMedication}
+              />
+              <button
+                type="button"
+                onClick={handleAddMedication}
+                className="px-4 py-4 bg-[#18D4C6] text-white font-semibold rounded-xl hover:bg-[#16c2b5] transition-colors shrink-0"
+              >
+                추가
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-6">

@@ -29,8 +29,8 @@ app.include_router(care_execution.router, prefix="/api")
 app.include_router(review.router, prefix="/api")
 app.include_router(personality.router, prefix="/api")
 # 새로운 프론트엔드 API 라우터
-app.include_router(guardians.router)
-app.include_router(patients.router)
+app.include_router(guardians.router, prefix="/api")
+app.include_router(patients.router, prefix="/api")
 app.include_router(dashboard.router)
 # XGBoost 매칭 API 라우터
 app.include_router(xgboost_matching.router)

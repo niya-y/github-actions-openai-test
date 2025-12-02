@@ -59,7 +59,8 @@ def verify_token(token: str) -> Optional[dict]:
             algorithms=[settings.JWT_ALGORITHM]
         )
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"❌ [DEBUG] 토큰 검증 실패: {e}")
         return None
 
 

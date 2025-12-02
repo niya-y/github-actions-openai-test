@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.profile import Guardian
 from app.schemas.guardian import GuardianCreateRequest, GuardianInfoResponse
 
-router = APIRouter(prefix="/api", tags=["Guardians"])
+router = APIRouter(tags=["Guardians"])
 
 
 @router.post("/guardians", status_code=status.HTTP_201_CREATED, response_model=GuardianInfoResponse)

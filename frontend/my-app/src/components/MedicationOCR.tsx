@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Camera, Upload, AlertCircle, CheckCircle } from 'lucide-react'
+import { Camera, AlertCircle, CheckCircle } from 'lucide-react'
 import MedicineCard from './MedicineCard'
 import { apiPost } from '@/utils/api'
 import type { OCRResultResponse, MedicineDetail } from '@/types/api'
@@ -17,7 +17,6 @@ export default function MedicationOCR({
   onMedicinesSelected,
   onConfirmMedicines,
 }: MedicationOCRProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   const [isLoading, setIsLoading] = useState(false)
@@ -51,15 +50,50 @@ export default function MedicationOCR({
       )
 
       console.log('[MedicationOCR] OCR 결과:', response)
+      console.log('[MedicationOCR] response?.success:', response?.success)
+      console.log('[MedicationOCR] response?.medicines:', response?.medicines)
 
       if (response?.success) {
+        console.log('[MedicationOCR] ✅ OCR 성공!')
         setOcrResult(response)
-        // 검증된 약들을 선택된 약으로 추가
-        if (response.medicines && response.medicines.length > 0) {
-          setSelectedMedicines(response.medicines)
-          onMedicinesSelected?.(response.medicine_names)
+
+        // 검증된 약 또는 미검증 약이 있는지 확인
+        const verifiedMedicines = response.medicines || []
+        const medicineNames = response.medicine_names || []
+
+        console.log('[MedicationOCR] 검증된 약:', verifiedMedicines.length, '미검증 약:', medicineNames.length)
+
+        if (medicineNames.length > 0) {
+          // medicine_names에는 verified + unverified가 포함됨
+          console.log('[MedicationOCR] 약물 목록:', medicineNames)
+
+          // UI에 표시할 약물: 검증된 약이 있으면 그걸 쓰고, 없으면 OCR 추출 약을 씀
+          if (verifiedMedicines.length > 0) {
+            setSelectedMedicines(verifiedMedicines)
+          } else {
+            // MFDS API 검증 실패 시 OCR 추출 약을 MedicineDetail 형태로 변환
+            const ocrExtractedMedicines = medicineNames.map(name => ({
+              item_name: name,
+              entp_name: '(검증 대기중)',
+              item_seq: '',
+              efficacy: '정보 없음',
+              usage: '정보 없음',
+              precaution: '정보 없음',
+              side_effect: '정보 없음',
+              storage: '정보 없음',
+              interaction: '정보 없음',
+              item_image: ''
+            }))
+            setSelectedMedicines(ocrExtractedMedicines)
+          }
+
+          onMedicinesSelected?.(medicineNames)
+        } else {
+          console.warn('[MedicationOCR] 인식된 약물이 없음')
+          setError('인식된 약물이 없습니다. 다시 시도해주세요.')
         }
       } else {
+        console.error('[MedicationOCR] ❌ OCR 실패:', response)
         setError(
           response?.message || '약봉지 인식에 실패했습니다. 다시 시도해주세요.'
         )
@@ -86,18 +120,6 @@ export default function MedicationOCR({
     }
   }
 
-  // 파일 선택 후 처리
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleImageUpload(file)
-    }
-    // input 초기화
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
   // 약 제거
   const handleRemoveMedicine = (itemName: string) => {
     const updated = selectedMedicines.filter((m) => m.item_name !== itemName)
@@ -110,29 +132,29 @@ export default function MedicationOCR({
     setOcrResult(null)
     setSelectedMedicines([])
     setError(null)
+    // 약물들은 부모 컴포넌트(patient-condition-3)의 medicine_names 상태에 저장되므로
+    // 여기서는 초기화해도 됨
   }
 
   return (
-    <div className="medication-ocr space-y-6">
+    <div className="medication-ocr space-y-3">
       {/* 에러 메시지 */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex gap-2">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-red-900">오류가 발생했습니다</p>
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="font-semibold text-red-900 text-sm">{error}</p>
           </div>
         </div>
       )}
 
       {/* 로딩 상태 */}
       {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 mb-4 bg-blue-100 rounded-full">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+          <div className="inline-flex items-center justify-center w-8 h-8 mb-2 bg-blue-100 rounded-full">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="font-semibold text-blue-900 mb-2">약 정보를 확인하는 중...</p>
-          <p className="text-sm text-blue-700">식약처 데이터베이스 검증 중입니다</p>
+          <p className="font-semibold text-blue-900 text-sm">인식 중...</p>
         </div>
       )}
 
@@ -167,109 +189,61 @@ export default function MedicationOCR({
               추천
             </div>
           </button>
-
-          {/* 파일 업로드 옵션 */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-            className="w-full p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <div className="flex items-center justify-center gap-2">
-              <Upload className="w-5 h-5 text-gray-600" />
-              <span className="font-semibold text-gray-700">
-                ✏️ 약 사진 업로드
-              </span>
-            </div>
-          </button>
         </div>
       )}
 
-      {/* OCR 결과 표시 */}
+      {/* OCR 결과 표시 - 약물 상세 정보 (팝업 없음, 내부에 표시) */}
       {ocrResult && !isLoading && (
-        <div className="space-y-4">
-          {/* 결과 헤더 */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-start justify-between">
-            <div className="flex gap-3 items-start flex-1">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="font-bold text-green-900">
-                  {ocrResult.message}
-                </p>
-                <p className="text-sm text-green-700">
-                  신뢰도: {(ocrResult.confidence * 100).toFixed(0)}%
-                </p>
-              </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
+          {/* 헤더 */}
+          <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+            <div>
+              <h3 className="text-base font-bold text-gray-800">검색된 약물</h3>
+              <p className="text-xs text-gray-600">{selectedMedicines.length}개 약품</p>
             </div>
+            <button
+              onClick={handleRetake}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
           </div>
 
-          {/* 검증된 약 목록 */}
-          {selectedMedicines.length > 0 && (
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-3">
-                검증된 약 ({selectedMedicines.length}개)
-              </p>
-              <div className="space-y-3">
-                {selectedMedicines.map((medicine, idx) => (
-                  <MedicineCard
-                    key={idx}
-                    medicine={medicine}
-                    onRemove={handleRemoveMedicine}
-                  />
-                ))}
+          {/* 약물 목록 - 스크롤 가능 */}
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {selectedMedicines.map((medicine, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <h4 className="font-semibold text-gray-800 text-sm flex-1 truncate">{medicine.item_name}</h4>
+                <button
+                  onClick={() => handleRemoveMedicine(medicine.item_name)}
+                  className="text-red-500 hover:text-red-700 font-bold text-lg shrink-0"
+                >
+                  ×
+                </button>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
 
-          {/* 미검증 약 경고 */}
-          {ocrResult.unverified_names && ocrResult.unverified_names.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <p className="font-bold text-yellow-900 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                ⚠️ 확인이 필요한 약
-              </p>
-              <p className="text-sm text-yellow-700 mb-3">
-                다음 약은 식약처 데이터베이스에서 찾을 수 없습니다:
-              </p>
-              <ul className="space-y-1 ml-4">
-                {ocrResult.unverified_names.map((name, idx) => (
-                  <li key={idx} className="text-sm text-yellow-800">
-                    • {name}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-gray-500 mt-3">
-                * 일반의약품이거나 OCR이 잘못 인식했을 수 있습니다.
-              </p>
-            </div>
-          )}
-
-          {/* 액션 버튼 */}
-          <div className="flex gap-3">
+          {/* 하단 버튼 */}
+          <div className="flex gap-2 pt-2 border-t border-gray-200">
             <button
               type="button"
               onClick={handleRetake}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition-colors"
+              className="flex-1 px-3 py-2 bg-gray-200 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
             >
               다시 촬영
             </button>
             <button
               type="button"
               onClick={() => {
-                // 확인 버튼 - 선택된 약들을 확정하고 결과 리셋
-                console.log('[MedicationOCR] 약물 선택 완료:', selectedMedicines)
-                onConfirmMedicines?.(selectedMedicines.map((m) => m.item_name))
-                // OCR 결과 초기화 (다시 촬영 가능하게)
-                handleRetake()
+                const medicineNames = selectedMedicines.map((m) => m.item_name)
+                console.log('[MedicationOCR] 약물 선택 확정:', medicineNames)
+                onMedicinesSelected?.(medicineNames)
+                onConfirmMedicines?.(medicineNames)
+                setOcrResult(null)
+                setSelectedMedicines([])
               }}
-              className="flex-1 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={selectedMedicines.length === 0}
             >
               확인

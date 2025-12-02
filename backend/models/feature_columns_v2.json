@@ -1,0 +1,12 @@
+[
+  "personality_diff_empathy",
+  "personality_diff_activity",
+  "personality_diff_patience",
+  "personality_diff_independence",
+  "specialty_match_ratio",
+  "region_match_score",
+  "caregiver_experience",
+  "caregiver_specialties_count",
+  "patient_care_level",
+  "patient_disease_count"
+]

@@ -65,7 +65,7 @@ export default function PatientCondition1Page() {
           setPatients(patientsList)
 
           // 🔧 sessionStorage에서 선택된 환자 ID 확인
-          const selectedPatientId = sessionStorage.getItem('selected_patient_id')
+          const selectedPatientId = sessionStorage.getItem('patient_id')
           let patientToDisplay: PatientInfo | null = null
 
           if (selectedPatientId) {

@@ -21,7 +21,7 @@ from app.schemas.patient import (
     DietaryPreferencesResponse
 )
 
-router = APIRouter(prefix="/api", tags=["Patients"])
+router = APIRouter(tags=["Patients"])
 
 
 @router.post("/patients", status_code=status.HTTP_201_CREATED, response_model=PatientInfoResponse)
@@ -85,27 +85,46 @@ async def get_my_patients(
 ):
     """
     현재 보호자의 모든 환자 목록 조회 + 가장 최근 환자
-
-    응답:
-    {
-        "patients": [
-            {"patient_id": 1, "name": "김철수", "age": 75, "gender": "Male", ...},
-            ...
-        ],
-        "latest_patient": {...},  # 가장 최근에 생성된 환자
-        "total": 3
-    }
     """
-    # 보호자 정보 가져오기
-    guardian = db.query(Guardian).filter(
-        Guardian.user_id == current_user.user_id
-    ).first()
+    print(f"🔍 [DEBUG] get_my_patients 호출됨. User ID: {current_user.user_id}, Name: {current_user.name}")
+
+    # 보호자 정보 가져오기 (ORM 관계 활용)
+    guardian = current_user.guardian
 
     if not guardian:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="보호자 정보를 먼저 등록해주세요"
-        )
+        # 혹시 관계 로딩이 안 되었을 수 있으므로 직접 쿼리 시도
+        guardian = db.query(Guardian).filter(Guardian.user_id == current_user.user_id).first()
+
+    print(f"🔍 [DEBUG] Guardian 조회 결과: {guardian}")
+
+    if not guardian:
+        print(f"⚠️ [WARN] Guardian 정보를 찾을 수 없음! (User ID: {current_user.user_id}) -> 자동 생성 시도")
+        try:
+            # 보호자 정보가 없으면 자동 생성 (사용자 편의성)
+            phone = getattr(current_user, 'phone_number', "010-0000-0000")
+            guardian = Guardian(
+                user_id=current_user.user_id,
+                name=current_user.name,
+                phone=phone,
+                address="주소를 입력해주세요",
+                relationship="본인"
+            )
+            db.add(guardian)
+            db.commit()
+            db.refresh(guardian)
+            print(f"✅ [INFO] 보호자 정보 자동 생성 완료: {current_user.user_id}")
+        except Exception as e:
+            print(f"⚠️ [WARN] 보호자 자동 생성 실패 (이미 존재할 수 있음): {e}")
+            db.rollback()
+            # 생성 실패 시 다시 조회 시도
+            guardian = db.query(Guardian).filter(Guardian.user_id == current_user.user_id).first()
+            
+        if not guardian:
+             # 그래도 없으면 에러
+             raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="보호자 정보를 생성할 수 없습니다."
+            )
 
     # 모든 환자 조회 (최신 순)
     patients = db.query(Patient).filter(
@@ -113,10 +132,12 @@ async def get_my_patients(
     ).order_by(Patient.created_at.desc()).all()
 
     if not patients:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="등록된 환자가 없습니다"
-        )
+        # 환자가 없으면 빈 리스트 반환 (404 에러 아님)
+        return {
+            "patients": [],
+            "latest_patient": None,
+            "total": 0
+        }
 
     # 응답 형식으로 변환
     patients_list = [
@@ -534,21 +555,37 @@ async def get_patient_caregiver(
     }
     또는 간병인이 없으면 null 반환
     """
-    from app.models.profile import Patient
+    from app.models.profile import Patient, Guardian
     from app.models.matching import MatchingRequest, MatchingResult
     from app.models.user import User as UserModel
 
-    # 1. 환자 접근 권한 확인
-    patient = db.query(Patient).join(Guardian).filter(
+    print(f"🔍 [DEBUG] get_patient_caregiver 호출: patient_id={patient_id}, user_id={current_user.user_id}")
+
+    # 1. 환자 접근 권한 확인 (로직 개선)
+    guardian = current_user.guardian
+    if not guardian:
+        guardian = db.query(Guardian).filter(Guardian.user_id == current_user.user_id).first()
+    
+    if not guardian:
+        print(f"❌ [DEBUG] 보호자 정보 없음")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="보호자 정보가 없습니다"
+        )
+
+    patient = db.query(Patient).filter(
         Patient.patient_id == patient_id,
-        Guardian.user_id == current_user.user_id
+        Patient.guardian_id == guardian.guardian_id
     ).first()
 
     if not patient:
+        print(f"❌ [DEBUG] 환자 정보 없음 또는 권한 없음: patient_id={patient_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="이 환자에 대한 접근 권한이 없습니다"
         )
+
+    print(f"✅ [DEBUG] 환자 확인 완료: {patient.name}")
 
     # 2. matching_results에서 status='active' 또는 'selected'인 최신 매칭 조회
     matching_result = db.query(MatchingResult).filter(
@@ -559,6 +596,8 @@ async def get_patient_caregiver(
             )
         )
     ).order_by(MatchingResult.updated_at.desc()).first()
+
+    print(f"🔍 [DEBUG] 매칭 결과 조회: {matching_result}")
 
     if not matching_result:
         # 할당된 간병인이 없으면 빈 응답
@@ -605,4 +644,51 @@ async def get_patient_caregiver(
         "avg_rating": float(caregiver.avg_rating) if caregiver.avg_rating else 0,
         "matching_id": matching_result.matching_id,
         "status": matching_result.status
+    }
+
+
+@router.get("/patients/{patient_id}/care-plans")
+async def get_patient_care_plans(
+    patient_id: int,
+    type: str = "weekly",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    환자의 케어 플랜(일정) 조회
+    
+    현재는 빈 리스트를 반환하여 프론트엔드에서 기본 데이터를 표시하도록 함.
+    추후 DB 연동 필요.
+    """
+    from app.models.care_execution import Schedule, CareLog
+    from datetime import date
+
+    print(f"🔍 [DEBUG] 케어 플랜 조회 요청: patient_id={patient_id}, type={type}")
+    
+    # 오늘 날짜 이후의 스케줄 조회 (일주일치)
+    today = date.today()
+    schedules = db.query(Schedule).filter(
+        Schedule.patient_id == patient_id,
+        Schedule.care_date >= today
+    ).order_by(Schedule.care_date).limit(7).all()
+
+    result_list = []
+    for schedule in schedules:
+        # care_logs가 로딩되지 않았을 수 있으므로 접근하여 로딩 유도 (Lazy Loading)
+        logs = schedule.care_logs
+        for log in logs:
+            result_list.append({
+                "schedule_id": log.log_id, # 프론트엔드에서는 개별 활동을 schedule로 취급
+                "title": log.task_name,
+                "start_time": log.scheduled_time.strftime("%H:%M") if log.scheduled_time else "",
+                "category": log.category.value if hasattr(log.category, 'value') else str(log.category),
+                "is_completed": log.is_completed,
+                "note": log.note
+            })
+    
+    print(f"✅ [DEBUG] 조회된 활동 수: {len(result_list)}")
+
+    return {
+        "patient_id": patient_id,
+        "schedules": result_list
     }

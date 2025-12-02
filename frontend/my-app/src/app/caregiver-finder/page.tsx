@@ -39,7 +39,7 @@ export default function CaregiverFinder() {
   }
 
   const handleSubmit = async () => {
-    const patientId = sessionStorage.getItem('selected_patient_id')
+    const patientId = sessionStorage.getItem('patient_id')
     if (!patientId) {
       alert('환자 정보를 찾을 수 없습니다. 처음부터 다시 시작해주세요.')
       router.push('/patient-condition-1')

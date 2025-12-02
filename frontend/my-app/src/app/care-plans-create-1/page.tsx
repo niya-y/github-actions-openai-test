@@ -4,16 +4,75 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary } from '../colors'
 import Image from 'next/image'
+import { apiPost } from '@/utils/api'
 
 export default function Screen8Loading() {
   const router = useRouter()
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push('/care-plans-create-2')
-    }, 3000)
+    const generatePlan = async () => {
+      try {
+        const patientId = sessionStorage.getItem('patient_id')
+        // 간병인 정보는 selectedCaregiver 또는 caregiver_id로 저장되어 있을 수 있음
+        const caregiverData = sessionStorage.getItem('selectedCaregiver')
+        const careRequirementsStr = sessionStorage.getItem('care_requirements')
 
-    return () => clearTimeout(timer)
+        if (!patientId) {
+          console.error("환자 ID 누락")
+          // 데이터가 없어도 일단 진행 (테스트용)
+        }
+
+        let caregiverId = 1 // 기본값
+        if (caregiverData) {
+          try {
+            const caregiver = JSON.parse(caregiverData)
+            caregiverId = caregiver.caregiver_id || caregiver.id || 1
+          } catch (e) {
+            console.error("간병인 데이터 파싱 오류", e)
+          }
+        }
+
+        let careRequirements = {
+          care_type: "nursing-aide",
+          time_slots: ["morning", "afternoon"],
+          gender: "Female",
+          skills: ["dementia", "diabetes"]
+        }
+
+        if (careRequirementsStr) {
+          try {
+            careRequirements = JSON.parse(careRequirementsStr)
+          } catch (e) {
+            console.error("케어 요구사항 파싱 오류", e)
+          }
+        }
+
+        console.log("AI 케어 플랜 생성 시작...")
+
+        // AI 생성 요청
+        await apiPost('/api/care-plans/generate', {
+          patient_id: patientId ? parseInt(patientId) : 1,
+          caregiver_id: caregiverId,
+          patient_personality: {
+            empathy_score: 75,
+            activity_score: 55,
+            patience_score: 80,
+            independence_score: 45
+          },
+          care_requirements: careRequirements
+        })
+
+        console.log("AI 케어 플랜 생성 완료!")
+        router.push('/care-plans-create-2')
+
+      } catch (err) {
+        console.error("케어 플랜 생성 실패:", err)
+        // 실패해도 일단 이동 (결과 페이지에서 에러 처리 또는 기본값 표시)
+        router.push('/care-plans-create-2')
+      }
+    }
+
+    generatePlan()
   }, [router])
 
   const styles = {
@@ -157,51 +216,51 @@ export default function Screen8Loading() {
         `}
       </style>
       <div style={styles.container}>
-          <div style={styles.loaderContainer}>
-            <div style={styles.loadingRing}></div>
-            <div style={styles.loader}>
-              <Image src="/assets/logo.png" alt="Logo" width={64} height={64} style={styles.loaderIcon} />
+        <div style={styles.loaderContainer}>
+          <div style={styles.loadingRing}></div>
+          <div style={styles.loader}>
+            <Image src="/assets/logo.png" alt="Logo" width={64} height={64} style={styles.loaderIcon} />
+          </div>
+        </div>
+
+        <div style={styles.messageContainer}>
+          <h2 style={styles.mainMessage}>AI가 케어 플랜을 생성하고 있어요</h2>
+
+          <div style={styles.stepMessages}>
+            <div style={{ ...styles.stepMessage, animationDelay: '0s' }}>
+              환자 정보를 분석하고 있어요...
+            </div>
+            <div style={{ ...styles.stepMessage, animationDelay: '2s' }}>
+              필요한 간병 활동을 찾고 있어요...
+            </div>
+            <div style={{ ...styles.stepMessage, animationDelay: '4s' }}>
+              가족과 간병인 일정을 조율하고 있어요...
+            </div>
+            <div style={{ ...styles.stepMessage, animationDelay: '6s' }}>
+              맞춤 케어 플랜을 생성 중...
             </div>
           </div>
+        </div>
 
-          <div style={styles.messageContainer}>
-            <h2 style={styles.mainMessage}>AI가 케어 플랜을 생성하고 있어요</h2>
-
-            <div style={styles.stepMessages}>
-              <div style={{...styles.stepMessage, animationDelay: '0s'}}>
-                환자 정보를 분석하고 있어요...
-              </div>
-              <div style={{...styles.stepMessage, animationDelay: '2s'}}>
-                필요한 간병 활동을 찾고 있어요...
-              </div>
-              <div style={{...styles.stepMessage, animationDelay: '4s'}}>
-                가족과 간병인 일정을 조율하고 있어요...
-              </div>
-              <div style={{...styles.stepMessage, animationDelay: '6s'}}>
-                맞춤 케어 플랜을 생성 중...
-              </div>
-            </div>
+        <div style={styles.infoCards}>
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>📋</div>
+            <div style={styles.infoTitle}>분석 중</div>
+            <div style={styles.infoValue}>42개</div>
           </div>
-
-          <div style={styles.infoCards}>
-            <div style={styles.infoCard}>
-              <div style={styles.infoIcon}>📋</div>
-              <div style={styles.infoTitle}>분석 중</div>
-              <div style={styles.infoValue}>42개</div>
-            </div>
-            <div style={styles.infoCard}>
-              <div style={styles.infoIcon}>🏥</div>
-              <div style={styles.infoTitle}>참고 자료</div>
-              <div style={styles.infoValue}>15건</div>
-            </div>
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🏥</div>
+            <div style={styles.infoTitle}>참고 자료</div>
+            <div style={styles.infoValue}>15건</div>
           </div>
+        </div>
 
-          <div style={styles.progressBarContainer}>
-            <div style={styles.progressBar}>
-              <div style={styles.progressFill}></div>
-            </div>
-            <div style={styles.progressText}>곧 완료됩니다...</div>
+        <div style={styles.progressBarContainer}>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill}></div>
           </div>
+          <div style={styles.progressText}>곧 완료됩니다...</div>
+        </div>
       </div>
     </>
   )

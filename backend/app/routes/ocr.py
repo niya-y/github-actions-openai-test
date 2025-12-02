@@ -123,25 +123,22 @@ async def upload_medication_image(
         
         logger.info(f"OCR 완료 - 검증된 약: {len(verified_medicines)}개")
         
-        # 4. 약 이름이 없으면 오류 반환
-        if not verified_medicines:
-            error_message = "이미지에서 약 이름을 찾을 수 없습니다."
-            if unverified_names:
-                error_message += f" 인식은 되었으나 등록되지 않은 약: {', '.join(unverified_names)}"
-            
+        # 4. 약 이름이 없으면 오류 반환 (OCR 자체가 실패한 경우)
+        if not verified_medicines and not unverified_names:
             raise HTTPException(
                 status_code=400,
-                detail=error_message + " 더 선명한 사진을 촬영해주세요."
+                detail="이미지에서 텍스트를 인식할 수 없습니다. 더 선명한 사진을 촬영해주세요."
             )
         
-        # 5. OCR 결과만 반환 (DB 저장은 Frontend에서 form submit 시에 수행)
-        medicine_names = [med["item_name"] for med in verified_medicines]
-        logger.info(f"OCR 결과 반환: {len(medicine_names)}개 약품")
+        # 5. OCR 결과 반환 (DB 저장은 Frontend에서 form submit 시에 수행)
+        # 검증된 약과 검증되지 않은 약(단순 텍스트) 모두 이름 목록에 포함하여 프론트엔드 입력창에 표시되도록 함
+        medicine_names = [med["item_name"] for med in verified_medicines] + unverified_names
+        logger.info(f"OCR 결과 반환: {len(medicine_names)}개 약품 (검증: {len(verified_medicines)}, 미검증: {len(unverified_names)})")
 
         # 6. 성공 응답
-        message = f"{len(verified_medicines)}개의 약품이 확인되었습니다."
+        message = f"총 {len(medicine_names)}개의 약품 이름이 인식되었습니다."
         if unverified_names:
-            message += f" (미확인: {len(unverified_names)}개)"
+            message += f" (식약처 미등록/불일치: {len(unverified_names)}건 포함)"
         
         return OCRResultResponse(
             success=True,

@@ -87,7 +87,7 @@ export default function HomePage() {
       icon: '💬',
       title: '메세지',
       desc: '보호자 메세지 보내기',
-      href: '/patient-condition'
+      href: '/patient-condition-1'
     }
   ]
 

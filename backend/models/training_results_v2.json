@@ -1,0 +1,38 @@
+{
+  "regression": {
+    "xgboost_regressor": {
+      "RMSE": 3.2149579508195765,
+      "MAE": 2.7215923082335918,
+      "R2": 0.9159122895518671,
+      "CV_R2_mean": 0.9140468751263544,
+      "CV_R2_std": 0.005729363260346417
+    },
+    "randomforest_regressor": {
+      "RMSE": 3.2512579890630535,
+      "MAE": 2.717876132706274,
+      "R2": 0.9140027035611592,
+      "CV_R2_mean": 0.9079694679460605,
+      "CV_R2_std": 0.005913017520297634
+    },
+    "best_model": "xgboost_regressor"
+  },
+  "classification": {
+    "xgboost_classifier": {
+      "Accuracy": 0.8677685950413223,
+      "Precision": 0.45454545454545453,
+      "Recall": 0.1282051282051282,
+      "F1": 0.2,
+      "CV_F1_mean": 0.22111346890204375,
+      "CV_F1_std": 0.0545504560662611
+    },
+    "randomforest_classifier": {
+      "Accuracy": 0.8694214876033057,
+      "Precision": 0.4,
+      "Recall": 0.02564102564102564,
+      "F1": 0.04819277108433735,
+      "CV_F1_mean": 0.061124807419427926,
+      "CV_F1_std": 0.03024846999716389
+    },
+    "best_model": "xgboost_classifier"
+  }
+}

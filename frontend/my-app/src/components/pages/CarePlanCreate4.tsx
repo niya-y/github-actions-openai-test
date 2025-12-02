@@ -225,7 +225,7 @@ export default function CarePlanCreate4({ onNext, onPrev, initialData = {}, onDa
       <div style={styles.navBar}>
         <button style={styles.backBtn} onClick={onPrev}>‹</button>
         <div style={styles.navTitle}>검증 결과</div>
-        <div style={{width: '20px'}}></div>
+        <div style={{ width: '20px' }}></div>
       </div>
 
       <div style={styles.header}>
@@ -288,12 +288,12 @@ export default function CarePlanCreate4({ onNext, onPrev, initialData = {}, onDa
           </div>
 
           <div style={styles.actionButtons}>
-            <button style={{...styles.actionBtn, ...styles.actionBtnPrimary}}>수용함</button>
+            <button style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}>수용함</button>
             <button style={styles.actionBtn}>거부함</button>
           </div>
         </div>
 
-        <div style={{...styles.feedbackCard, ...styles.feedbackCardWarning}}>
+        <div style={{ ...styles.feedbackCard, ...styles.feedbackCardWarning }}>
           <div style={styles.feedbackHeader}>
             <span>⚠️</span>
             <span>부분 수용 권장</span>
@@ -306,10 +306,10 @@ export default function CarePlanCreate4({ onNext, onPrev, initialData = {}, onDa
             </div>
           </div>
 
-          <div style={{...styles.validationBox, ...styles.validationBoxWarning}}>
+          <div style={{ ...styles.validationBox, ...styles.validationBoxWarning }}>
             <div style={styles.validationTitle}>✓ 휴식 필요성은 타당함</div>
             <div>⚠️ 2시간은 과도함</div>
-            <div style={{marginTop: '8px'}}>78세 경도 치매 환자의 경우, 적절한 인지 자극이 필요합니다. 과도한 휴식은 오히려 인지 기능 저하를 유발할 수 있습니다.</div>
+            <div style={{ marginTop: '8px' }}>78세 경도 치매 환자의 경우, 적절한 인지 자극이 필요합니다. 과도한 휴식은 오히려 인지 기능 저하를 유발할 수 있습니다.</div>
           </div>
 
           <div style={styles.suggestion}>
@@ -318,13 +318,13 @@ export default function CarePlanCreate4({ onNext, onPrev, initialData = {}, onDa
           </div>
 
           <div style={styles.actionButtons}>
-            <button style={{...styles.actionBtn, ...styles.actionBtnPrimary}}>AI 제안 수용</button>
+            <button style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}>AI 제안 수용</button>
             <button style={styles.actionBtn}>간병인 제안 수용</button>
             <button style={styles.actionBtn}>직접 수정</button>
           </div>
         </div>
 
-        <div style={{...styles.feedbackCard, ...styles.feedbackCardReject}}>
+        <div style={{ ...styles.feedbackCard, ...styles.feedbackCardReject }}>
           <div style={styles.feedbackHeader}>
             <span>❌</span>
             <span>거부 권장</span>
@@ -337,24 +337,24 @@ export default function CarePlanCreate4({ onNext, onPrev, initialData = {}, onDa
             </div>
           </div>
 
-          <div style={{...styles.validationBox, ...styles.validationBoxError}}>
+          <div style={{ ...styles.validationBox, ...styles.validationBoxError }}>
             <div style={styles.validationTitle}>✗ 의학적 근거 불충분</div>
             <div>환자가 복용 중인 암로디핀은 하루 한 번 아침 복용이 표준입니다. 야간 저혈압 위험을 피하기 위해 저녁 복용은 권장되지 않습니다.</div>
-            <div style={{marginTop: '8px', fontWeight: 600}}>⚠️ 의사와 상담 후 변경을 권장합니다.</div>
+            <div style={{ marginTop: '8px', fontWeight: 600 }}>⚠️ 의사와 상담 후 변경을 권장합니다.</div>
           </div>
 
           <div style={styles.actionButtons}>
             <button style={styles.actionBtn}>그래도 변경</button>
-            <button style={{...styles.actionBtn, ...styles.actionBtnPrimary}}>원안 유지</button>
+            <button style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}>원안 유지</button>
           </div>
         </div>
       </div>
 
       <div style={styles.bottomBar}>
-        <button style={{...styles.btn, ...styles.btnOutline}} onClick={onPrev}>이전</button>
+        <button style={{ ...styles.btn, ...styles.btnOutline }} onClick={onPrev}>이전</button>
         <button
-          style={{...styles.btn, ...styles.btnPrimary}}
-          onClick={() => router.push('/dashboard')}
+          style={{ ...styles.btn, ...styles.btnPrimary }}
+          onClick={() => router.push('/home')}
         >
           완료
         </button>

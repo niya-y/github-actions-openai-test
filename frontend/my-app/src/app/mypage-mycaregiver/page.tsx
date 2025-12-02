@@ -400,7 +400,7 @@ export default function MyMatchingConfirmedPage() {
           <div style={styles.actionButtons}>
             <button
               style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
-              onClick={() => router.push('/care-plans-create')}
+              onClick={() => router.push('/care-plans-create-1')}
             >
               <span>📅</span>
               AI 맞춤 케어 일정 만들기

@@ -20,7 +20,7 @@ from app.dependencies.database import get_db
 from app.models.profile import Caregiver
 from app.models.user import User
 from app.models.care_details import CaregiverPersonality
-from app.models.matching import MatchingRequest
+from app.models.matching import MatchingRequest, MatchingResult
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -108,6 +108,7 @@ class CaregiverMatchResult(BaseModel):
     personality_analysis: str
     specialties: List[str] = []
     availability: List[str] = []
+    matching_id: Optional[int] = None
 
 
 class XGBoostMatchingResponse(BaseModel):
@@ -242,6 +243,32 @@ async def recommend_caregivers_xgboost(
             db.refresh(matching_request)
             logger.info(f"[매칭 요청 저장] request_id={matching_request.request_id}, patient_id={request.patient_id}, "
                        f"care_period={request.care_start_date} ~ {request.care_end_date}")
+
+            # 매칭 결과(MatchingResult) 저장
+            saved_matches = []
+            for match in matches:
+                try:
+                    matching_result = MatchingResult(
+                        request_id=matching_request.request_id,
+                        caregiver_id=match['caregiver_id'],
+                        status="recommended",
+                        total_score=match['match_score'],
+                        grade=match['grade'],
+                        ai_comment=match['personality_analysis']
+                    )
+                    db.add(matching_result)
+                    db.commit()
+                    db.refresh(matching_result)
+                    
+                    # 응답 객체에 matching_id 설정
+                    match['matching_id'] = matching_result.matching_id
+                    saved_matches.append(match)
+                except Exception as e:
+                    logger.error(f"[매칭 결과 저장 실패] caregiver_id={match.get('caregiver_id')}: {e}")
+                    # 실패해도 다른 매칭은 계속 저장 시도
+            
+            # matches 리스트 업데이트
+            matches = saved_matches
         except Exception as e:
             logger.error(f"[매칭 요청 저장 실패] {e}")
             db.rollback()

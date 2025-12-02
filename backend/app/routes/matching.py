@@ -201,7 +201,7 @@ def list_results_enhanced(skip: int = 0, limit: int = 100, db: Session = Depends
     return results
 
 
-@router.post("/matching/{matching_id}/select", status_code=status.HTTP_200_OK)
+@router.post("/{matching_id}/select", status_code=status.HTTP_200_OK)
 async def select_caregiver(
     matching_id: int,
     db: Session = Depends(get_db)
