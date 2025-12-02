@@ -212,13 +212,13 @@ export default function MedicationOCR({
           </div>
 
           {/* 약물 목록 - 스크롤 가능 */}
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="space-y-1 max-h-[250px] overflow-y-auto">
             {selectedMedicines.map((medicine, idx) => (
-              <div key={idx} className="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <h4 className="font-semibold text-[#353535] text-sm flex-1 truncate">{medicine.item_name}</h4>
+              <div key={idx} className="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                <h4 className="font-semibold text-[#353535] text-xs flex-1 truncate">{medicine.item_name}</h4>
                 <button
                   onClick={() => handleRemoveMedicine(medicine.item_name)}
-                  className="text-[#a0a0a0] hover:text-[#606060] font-bold text-lg shrink-0"
+                  className="text-[#a0a0a0] hover:text-[#606060] font-bold text-base shrink-0"
                 >
                   ×
                 </button>
