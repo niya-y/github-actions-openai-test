@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { background, firstPrimary } from '../colors'
+import { ChevronLeft, Check } from 'lucide-react'
 import { apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
+import { cn } from '@/utils/cn'
 import type { MatchingRequest, MatchingResponse } from '@/types/api'
 
 export default function CaregiverFinder() {
@@ -26,16 +27,28 @@ export default function CaregiverFinder() {
     )
   }
 
-  const togglePreferredDay = (day: string) => {
-    setPreferredDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
-  }
-
   const toggleSkill = (skill: string) => {
     setSkills(prev =>
       prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
     )
+  }
+
+  const handleCareStartDateChange = (newDate: string) => {
+    setCareStartDate(newDate)
+    // 시작일을 선택하면 모든 요일 자동 선택
+    if (newDate) {
+      const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      setPreferredDays(allDays)
+    }
+  }
+
+  const handleCareEndDateChange = (newDate: string) => {
+    setCareEndDate(newDate)
+    // 종료일을 선택하면 모든 요일 자동 선택 (이미 선택되어 있을 수 있음)
+    if (newDate && careStartDate) {
+      const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      setPreferredDays(allDays)
+    }
   }
 
   const handleSubmit = async () => {
@@ -140,428 +153,185 @@ export default function CaregiverFinder() {
     }
   }
 
-  const styles = {
-    container: {
-      width: '100%',
-      height: '100vh',
-      background: background,
-      display: 'flex',
-      flexDirection: 'column' as const
-    },
-    navBar: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '15px 20px',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    backBtn: {
-      fontSize: '20px',
-      cursor: 'pointer',
-      color: firstPrimary,
-      background: 'none',
-      border: 'none'
-    },
-    navTitle: {
-      flex: 1,
-      textAlign: 'center' as const,
-      fontWeight: 600,
-      fontSize: '17px'
-    },
-    progress: {
-      flex: 1,
-      margin: '0 20px'
-    },
-    progressBar: {
-      width: '100%',
-      height: '4px',
-      background: 'transparent',
-      borderRadius: '2px',
-      display: 'flex',
-      gap: '4px'
-    },
-    progressSegment: {
-      flex: 1,
-      height: '100%',
-      background: '#e0e0e0',
-      borderRadius: '2px'
-    },
-    progressSegmentFilled: {
-      flex: 1,
-      height: '100%',
-      background: firstPrimary,
-      borderRadius: '2px'
-    },
-    content: {
-      flex: 1,
-      overflowY: 'auto' as const,
-      padding: '30px 20px'
-    },
-    headerText: {
-      marginBottom: '30px'
-    },
-    h2: {
-      fontSize: '26px',
-      color: '#333',
-      marginBottom: '8px'
-    },
-    section: {
-      marginBottom: '30px'
-    },
-    sectionTitle: {
-      fontSize: '16px',
-      fontWeight: 600,
-      color: '#333',
-      marginBottom: '15px'
-    },
-    typeOptions: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '12px'
-    },
-    typeOption: {
-      padding: '15px',
-      borderWidth: '2px',
-      borderStyle: 'solid',
-      borderColor: '#e0e0e0',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    },
-    typeOptionSelected: {
-      borderColor: firstPrimary,
-      background: '#f0f4ff'
-    },
-    optionLabel: {
-      fontSize: '15px',
-      fontWeight: 600,
-      color: '#333',
-      marginBottom: '4px'
-    },
-    optionDesc: {
-      fontSize: '13px',
-      color: '#666'
-    },
-    timeGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '10px'
-    },
-    timeCheckbox: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '12px',
-      borderWidth: '2px',
-      borderStyle: 'solid',
-      borderColor: '#e0e0e0',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    },
-    timeCheckboxChecked: {
-      borderColor: firstPrimary,
-      background: '#f0f4ff'
-    },
-    checkboxIcon: {
-      width: '20px',
-      height: '20px',
-      borderWidth: '2px',
-      borderStyle: 'solid',
-      borderColor: '#e0e0e0',
-      borderRadius: '5px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '12px'
-    },
-    checkboxIconChecked: {
-      background: firstPrimary,
-      borderColor: firstPrimary,
-      color: 'white'
-    },
-    timeLabel: {
-      flex: 1,
-      fontSize: '14px',
-      color: '#333'
-    },
-    preferenceGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '8px',
-      marginBottom: '15px'
-    },
-    preferenceBtn: {
-      padding: '10px',
-      borderWidth: '2px',
-      borderStyle: 'solid',
-      borderColor: '#e0e0e0',
-      borderRadius: '10px',
-      textAlign: 'center' as const,
-      fontSize: '13px',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      background: 'white'
-    },
-    preferenceBtnSelected: {
-      borderColor: firstPrimary,
-      background: '#f0f4ff',
-      color: firstPrimary
-    },
-    skillList: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '10px'
-    },
-    skillItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '12px',
-      background: '#f9fafb',
-      borderRadius: '10px'
-    },
-    skillCheckbox: {
-      width: '22px',
-      height: '22px',
-      accentColor: firstPrimary
-    },
-    skillLabel: {
-      flex: 1,
-      fontSize: '14px',
-      color: '#333'
-    },
-    budgetSection: {
-      background: '#f9fafb',
-      padding: '20px',
-      borderRadius: '15px'
-    },
-    budgetValue: {
-      textAlign: 'center' as const,
-      fontSize: '32px',
-      fontWeight: 700,
-      color: firstPrimary,
-      margin: '15px 0'
-    },
-    budgetSlider: {
-      width: '100%',
-      height: '6px',
-      WebkitAppearance: 'none' as const,
-      appearance: 'none' as const,
-      background: '#e0e0e0',
-      borderRadius: '3px',
-      outline: 'none'
-    },
-    budgetInfo: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginTop: '10px',
-      fontSize: '12px',
-      color: '#999'
-    },
-    averageInfo: {
-      textAlign: 'center' as const,
-      fontSize: '13px',
-      color: '#666',
-      marginTop: '10px'
-    },
-    bottomBar: {
-      padding: '20px 0',
-      marginTop: '10px',
-      paddingBottom: '100px'
-    },
-    findButton: {
-      width: '100%',
-      padding: '18px',
-      background: firstPrimary,
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontSize: '17px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      opacity: 1
-    },
-    findButtonDisabled: {
-      opacity: 0.5,
-      cursor: 'not-allowed'
-    }
-  }
-
   return (
-    <div style={styles.container}>
+    <div className="min-h-screen bg-white flex flex-col">
       <ErrorAlert error={error} onClose={() => setError(null)} />
 
-      <div style={styles.navBar}>
-        <button style={styles.backBtn} onClick={() => router.push('/patient-condition-3')}>←</button>
-        <div style={styles.progress}>
-          <div style={styles.progressBar}>
-            <div style={styles.progressSegmentFilled}></div>
-            <div style={styles.progressSegmentFilled}></div>
-            <div style={styles.progressSegmentFilled}></div>
-            <div style={styles.progressSegmentFilled}></div>
-            <div style={styles.progressSegmentFilled}></div>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-4 pt-4 pb-2">
+        <div className="flex items-center mb-2">
+          <button
+            onClick={() => router.push('/patient-condition-3')}
+            className="p-2 -ml-2 text-[#828282]"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Progress Bar */}
+          <div className="flex-1 flex gap-2 ml-4 mr-2">
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
+            <div className="h-1 flex-1 bg-[#18d4c6] rounded-full" />
           </div>
         </div>
-        <div style={{ fontSize: '14px', color: '#000', cursor: 'pointer' }}>건너뛰기</div>
-      </div>
 
-      <div style={styles.content}>
-        <div style={styles.headerText}>
-          <h2 style={styles.h2}>어떤 분을 찾으시나요?</h2>
+        <div className="text-center mb-3">
+          <span className="text-xs text-[#828282]">마지막이에요, 다 왔어요!</span>
         </div>
 
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>돌봄 유형</div>
-          <div style={styles.typeOptions}>
-            <div
-              style={{ ...styles.typeOption, ...(careType === 'nursing-aide' ? styles.typeOptionSelected : {}) }}
+        <div className="h-px bg-gray-100 -mx-4" />
+      </header>
+
+      <main className="flex-1 px-8 pt-6 pb-32 overflow-y-auto">
+        {/* Title */}
+        <div className="mb-8">
+          <h1 className="text-[28px] font-bold text-[#353535]">어떤 분을 찾으시나요?</h1>
+        </div>
+
+        {/* Care Type */}
+        <div className="mb-9">
+          <h2 className="text-lg font-bold text-black mb-2 ml-1">돌봄 유형</h2>
+          <div className="space-y-2">
+            <button
               onClick={() => setCareType('nursing-aide')}
+              className={cn(
+                "w-full text-left p-4 rounded-[10px] border transition-all shadow-sm",
+                careType === 'nursing-aide'
+                  ? "bg-[#e8fffd] border-[#18d4c6]"
+                  : "bg-white border-[#828282]"
+              )}
             >
-              <div style={styles.optionLabel}>요양보호사</div>
-              <div style={styles.optionDesc}>식사, 목욕, 이동 등 일상 돌봄</div>
-            </div>
-            <div
-              style={{ ...styles.typeOption, ...(careType === 'nursing-assistant' ? styles.typeOptionSelected : {}) }}
-              onClick={() => setCareType('nursing-assistant')}
-            >
-              <div style={styles.optionLabel}>간호조무사</div>
-              <div style={styles.optionDesc}>기본 의료 보조 업무</div>
-            </div>
-            <div
-              style={{ ...styles.typeOption, ...(careType === 'nurse' ? styles.typeOptionSelected : {}) }}
-              onClick={() => setCareType('nurse')}
-            >
-              <div style={styles.optionLabel}>간호사</div>
-              <div style={styles.optionDesc}>전문 의료 서비스</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>희망 시간</div>
-          <div style={styles.timeGrid}>
-            {[
-              { id: 'morning', label: '오전', time: '09:00-12:00' },
-              { id: 'afternoon', label: '오후', time: '12:00-18:00' },
-              { id: 'evening', label: '저녁', time: '18:00-22:00' },
-              { id: 'night', label: '야간', time: '22:00-09:00' }
-            ].map(slot => (
-              <div
-                key={slot.id}
-                style={{
-                  ...styles.timeCheckbox,
-                  ...(timeSlots.includes(slot.id) ? styles.timeCheckboxChecked : {})
-                }}
-                onClick={() => toggleTimeSlot(slot.id)}
-              >
-                <div style={{
-                  ...styles.checkboxIcon,
-                  ...(timeSlots.includes(slot.id) ? styles.checkboxIconChecked : {})
-                }}>
-                  {timeSlots.includes(slot.id) ? '✓' : ''}
-                </div>
-                <div style={styles.timeLabel}>
-                  <div>{slot.label}</div>
-                  <span style={{ fontSize: '11px', color: '#999' }}>{slot.time}</span>
-                </div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className={cn("text-base font-bold", careType === 'nursing-aide' ? "text-[#353535]" : "text-[#646464]")}>요양보호사</span>
               </div>
-            ))}
+              <span className={cn("text-xs leading-snug", careType === 'nursing-aide' ? "text-[#353535]" : "text-[#646464]")}>국가 공인 자격증 보유, 재가 방문 요양 전문</span>
+            </button>
+
+            <button
+              onClick={() => setCareType('nursing-assistant')}
+              className={cn(
+                "w-full text-left p-4 rounded-[10px] border transition-all shadow-sm",
+                careType === 'nursing-assistant'
+                  ? "bg-[#e8fffd] border-[#18d4c6]"
+                  : "bg-white border-[#828282]"
+              )}
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className={cn("text-base font-bold", careType === 'nursing-assistant' ? "text-[#353535]" : "text-[#646464]")}>간호조무사</span>
+              </div>
+              <span className={cn("text-xs leading-snug", careType === 'nursing-assistant' ? "text-[#353535]" : "text-[#646464]")}>기본 의료 보조 업무</span>
+            </button>
+
+            <button
+              onClick={() => setCareType('nurse')}
+              className={cn(
+                "w-full text-left p-4 rounded-[10px] border transition-all shadow-sm",
+                careType === 'nurse'
+                  ? "bg-[#e8fffd] border-[#18d4c6]"
+                  : "bg-white border-[#828282]"
+              )}
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className={cn("text-base font-bold", careType === 'nurse' ? "text-[#353535]" : "text-[#646464]")}>간호사</span>
+              </div>
+              <span className={cn("text-xs leading-snug", careType === 'nurse' ? "text-[#353535]" : "text-[#646464]")}>전문 의료 서비스</span>
+            </button>
           </div>
         </div>
 
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>희망 요일</div>
-          <div style={styles.preferenceGrid}>
-            {[
-              { id: 'Monday', label: '월' },
-              { id: 'Tuesday', label: '화' },
-              { id: 'Wednesday', label: '수' },
-              { id: 'Thursday', label: '목' },
-              { id: 'Friday', label: '금' },
-              { id: 'Saturday', label: '토' },
-              { id: 'Sunday', label: '일' }
-            ].map(day => (
-              <button
-                key={day.id}
-                style={{
-                  ...styles.preferenceBtn,
-                  ...(preferredDays.includes(day.id) ? styles.preferenceBtnSelected : {})
-                }}
-                onClick={() => togglePreferredDay(day.id)}
-              >
-                {day.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>간병 기간</div>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '8px' }}>
-                시작일
-              </label>
+        {/* 간병 기간 */}
+        <div className="mb-9">
+          <h2 className="text-lg font-bold text-black mb-2 ml-1">간병 기간</h2>
+          <div className="flex gap-3 mb-3">
+            <div className="flex-1">
+              <label className="text-xs text-[#828282] block mb-2">시작일</label>
               <input
                 type="date"
                 value={careStartDate}
-                onChange={(e) => setCareStartDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderWidth: '2px',
-                  borderStyle: 'solid',
-                  borderColor: '#e0e0e0',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit'
-                }}
+                onChange={(e) => handleCareStartDateChange(e.target.value)}
+                className="w-full h-10 px-3 rounded-[10px] border border-[#828282] text-sm focus:outline-none focus:border-[#18d4c6]"
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '8px' }}>
-                종료일
-              </label>
+            <div className="flex-1">
+              <label className="text-xs text-[#828282] block mb-2">종료일</label>
               <input
                 type="date"
                 value={careEndDate}
-                onChange={(e) => setCareEndDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderWidth: '2px',
-                  borderStyle: 'solid',
-                  borderColor: '#e0e0e0',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit'
-                }}
+                onChange={(e) => handleCareEndDateChange(e.target.value)}
+                className="w-full h-10 px-3 rounded-[10px] border border-[#828282] text-sm focus:outline-none focus:border-[#18d4c6]"
               />
             </div>
           </div>
-          <div style={{ fontSize: '12px', color: '#999', marginBottom: '15px' }}>
-            간병 기간을 설정하면 이 기간에 이용 가능한 간병인을 찾습니다. (선택사항)
+          <p className="text-xs text-[#828282]">간병 기간을 설정하면 이 기간에 이용 가능한 간병인을 찾습니다. (선택사항)</p>
+        </div>
+
+        {/* Time Selection */}
+        <div className="mb-9">
+          <div className="flex items-center gap-2 mb-2 ml-1">
+            <h2 className="text-lg font-bold text-black">희망 시간</h2>
+            <span className="text-xs text-[#828282]">중복 선택 가능</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { id: 'morning', label: '오전', time: '09:00 ~ 12:00' },
+              { id: 'afternoon', label: '오후', time: '12:00 ~ 18:00' },
+              { id: 'evening', label: '저녁', time: '18:00 ~ 22:00' },
+              { id: 'night', label: '야간', time: '22:00 ~ 09:00' }
+            ].map((item) => {
+              const isSelected = timeSlots.includes(item.id)
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => toggleTimeSlot(item.id)}
+                  className={cn(
+                    "relative flex items-start p-2 rounded-lg border transition-all shadow-sm text-left",
+                    isSelected
+                      ? "bg-[#e8fffd] border-[#18d4c6]"
+                      : "bg-white border-[#828282]"
+                  )}
+                >
+                  <div className={cn(
+                    "w-3.5 h-3.5 mt-0 mr-2 flex items-center justify-center rounded-[2px] border flex-shrink-0",
+                    isSelected ? "bg-[#18d4c6] border-[#18d4c6]" : "bg-white border-[#828282]"
+                  )}>
+                    {isSelected && <Check className="w-2 h-2 text-white" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className={cn("text-xs font-bold leading-tight", isSelected ? "text-[#353535]" : "text-[#828282]")}>{item.label}</div>
+                    <div className={cn("text-[10px] leading-tight", isSelected ? "text-[#353535]" : "text-[#828282]")}>{item.time}</div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>선호 조건 (선택)</div>
+        {/* Preferences */}
+        <div className="mb-9">
+          <h2 className="text-lg font-bold text-black mb-2 ml-1">선호 조건(선택)</h2>
 
-          <div style={{ marginBottom: '15px' }}>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>성별</div>
-            <div style={styles.preferenceGrid}>
+          {/* Gender */}
+          <div className="mb-4">
+            <span className="text-xs text-[#828282] ml-1 mb-2 block">성별</span>
+            <div className="flex gap-2">
               {[
-                { id: 'any' as const, label: '무관' },
-                { id: 'Male' as const, label: '남성' },
-                { id: 'Female' as const, label: '여성' }
+                { id: 'Male', label: '남성' },
+                { id: 'Female', label: '여성' },
+                { id: 'any', label: '무관' }
               ].map(g => (
                 <button
                   key={g.id}
-                  style={{
-                    ...styles.preferenceBtn,
-                    ...(gender === g.id ? styles.preferenceBtnSelected : {})
-                  }}
-                  onClick={() => setGender(g.id)}
+                  onClick={() => setGender(g.id as any)}
+                  className={cn(
+                    "flex-1 py-2 rounded-md border text-sm font-bold transition-all",
+                    gender === g.id
+                      ? "bg-[#e8fffd] border-[#18d4c6] text-[#353535]"
+                      : "bg-white border-[#828282] text-[#646464]"
+                  )}
                 >
                   {g.label}
                 </button>
@@ -569,9 +339,10 @@ export default function CaregiverFinder() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '15px' }}>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>경력</div>
-            <div style={styles.preferenceGrid}>
+          {/* Experience */}
+          <div>
+            <span className="text-xs text-[#828282] ml-1 mb-2 block">경력</span>
+            <div className="grid grid-cols-4 gap-2">
               {[
                 { id: 'less1', label: '1년 미만' },
                 { id: '1-3', label: '1-3년' },
@@ -580,54 +351,69 @@ export default function CaregiverFinder() {
               ].map(exp => (
                 <button
                   key={exp.id}
-                  style={{
-                    ...styles.preferenceBtn,
-                    ...(experience === exp.id ? styles.preferenceBtnSelected : {})
-                  }}
                   onClick={() => setExperience(exp.id)}
+                  className={cn(
+                    "py-2 rounded-md border text-sm font-bold transition-all",
+                    experience === exp.id
+                      ? "bg-[#e8fffd] border-[#18d4c6] text-[#353535]"
+                      : "bg-white border-[#828282] text-[#646464]"
+                  )}
                 >
                   {exp.label}
                 </button>
               ))}
             </div>
           </div>
+        </div>
 
-          <div>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>필요 기술</div>
-            <div style={styles.skillList}>
-              {[
-                { id: 'dementia', label: '치매 환자 케어' },
-                { id: 'diabetes', label: '당뇨 환자 케어' },
-                { id: 'bedsore', label: '욕창 관리' },
-                { id: 'suction', label: '석션 가능' }
-              ].map(skill => (
-                <label key={skill.id} style={styles.skillItem}>
-                  <input
-                    type="checkbox"
-                    style={styles.skillCheckbox}
-                    checked={skills.includes(skill.id)}
-                    onChange={() => toggleSkill(skill.id)}
-                  />
-                  <span style={styles.skillLabel}>{skill.label}</span>
-                </label>
-              ))}
-            </div>
+        {/* Skills */}
+        <div className="mb-8">
+          <span className="text-xs text-[#828282] ml-1 mb-2 block">필요 기술</span>
+          <div className="space-y-2">
+            {[
+              { id: 'dementia', label: '치매 환자 케어' },
+              { id: 'diabetes', label: '당뇨 환자 케어' },
+              { id: 'bedsore', label: '욕창 관리' },
+              { id: 'suction', label: '석션 가능' }
+            ].map(skill => {
+              const isSelected = skills.includes(skill.id)
+              return (
+                <button
+                  key={skill.id}
+                  onClick={() => toggleSkill(skill.id)}
+                  className={cn(
+                    "w-full flex items-center py-3 px-4 rounded-[10px] border transition-all shadow-sm",
+                    isSelected
+                      ? "bg-[#e8fffd] border-[#18d4c6]"
+                      : "bg-white border-[#828282]"
+                  )}
+                >
+                  <div className={cn(
+                    "w-4 h-4 mr-3 flex items-center justify-center rounded-[2px] border",
+                    isSelected ? "bg-[#18d4c6] border-[#18d4c6]" : "bg-white border-[#828282]"
+                  )}>
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  <span className={cn("text-sm font-bold", isSelected ? "text-[#353535]" : "text-[#646464]")}>
+                    {skill.label}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
+      </main>
 
-        <div style={styles.bottomBar}>
-          <button
-            style={{
-              ...styles.findButton,
-              ...(loading ? styles.findButtonDisabled : {})
-            }}
-            onClick={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? '매칭 중...' : '매칭 찾기'}
-          </button>
-        </div>
-      </div>
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-white px-8 pb-8 pt-4">
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full h-14 bg-[#18d4c6] rounded-[10px] flex items-center justify-center shadow-[0px_2px_8px_rgba(188,188,188,0.8)] hover:bg-[#15b0a8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className="text-lg font-bold text-white">{loading ? '매칭 중...' : '매칭 시작하기'}</span>
+        </button>
+      </footer>
     </div>
   )
 }
