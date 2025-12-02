@@ -3,6 +3,7 @@
 """
 
 import logging
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.dependencies.database import get_db
 from app.models.profile import Patient, Caregiver, Guardian
 from app.models.user import User
+from app.models.care_execution import Schedule, CareLog, CareCategoryEnum
 from app.services.care_plan_generation_service import CarePlanGenerationService
 
 logger = logging.getLogger(__name__)
@@ -121,6 +123,78 @@ async def generate_care_plan(
         )
 
         logger.info(f"[케어 플랜 생성 완료] 총 {len(care_plan.weekly_schedule)}일간의 일정 생성")
+
+        # DB에 저장
+        try:
+            logger.info("[케어 플랜 저장 시작] DB에 스케줄 및 케어 로그 저장 중...")
+
+            # 오늘 날짜부터 시작
+            start_date = datetime.now().date()
+
+            # weekly_schedule의 각 day에 대해 반복
+            for day_index, day_schedule in enumerate(care_plan.weekly_schedule):
+                care_date = start_date + timedelta(days=day_index)
+
+                # Schedule 생성
+                schedule = Schedule(
+                    patient_id=request.patient_id,
+                    matching_id=None,  # 매칭 ID는 선택사항
+                    care_date=care_date,
+                    is_ai_generated=True,
+                    status="scheduled"
+                )
+                db.add(schedule)
+                db.flush()  # schedule_id를 얻기 위해 flush
+
+                # 각 activity에 대한 CareLog 생성
+                for activity in day_schedule.get("activities", []):
+                    try:
+                        # activity의 시간 파싱 (HH:MM 형식)
+                        scheduled_time = None
+                        if activity.get("time"):
+                            time_parts = activity["time"].split(":")
+                            if len(time_parts) >= 2:
+                                scheduled_time = f"{time_parts[0]}:{time_parts[1]}:00"
+
+                        # 카테고리 결정 (기본값: "other")
+                        category = "other"
+                        activity_title = activity.get("title", "").lower()
+                        if "약" in activity_title or "medication" in activity_title:
+                            category = "medication"
+                        elif "식사" in activity_title or "meal" in activity_title:
+                            category = "meal"
+                        elif "운동" in activity_title or "exercise" in activity_title:
+                            category = "exercise"
+                        elif "체크" in activity_title or "vital" in activity_title:
+                            category = "vital_check"
+                        elif "위생" in activity_title or "hygiene" in activity_title:
+                            category = "hygiene"
+
+                        # CareLog 생성
+                        care_log = CareLog(
+                            schedule_id=schedule.schedule_id,
+                            category=category,
+                            task_name=activity.get("title", "활동"),
+                            scheduled_time=scheduled_time,
+                            is_completed=False,
+                            note=activity.get("note", "")
+                        )
+                        db.add(care_log)
+
+                    except Exception as e:
+                        logger.warning(f"[CareLog 생성 실패] activity: {activity}, error: {e}")
+                        # 하나의 활동 실패가 전체 프로세스를 중단하지 않도록
+                        continue
+
+            # 트랜잭션 커밋
+            db.commit()
+            logger.info(f"[케어 플랜 저장 완료] 총 {len(care_plan.weekly_schedule)}개 일정 저장됨")
+
+        except Exception as e:
+            db.rollback()
+            logger.error(f"❌ 케어 플랜 DB 저장 실패: {e}")
+            # DB 저장 실패해도 응답은 계속 반환 (AI 생성은 성공했으므로)
+            logger.warning("경고: DB 저장에 실패했으나 AI 생성 결과는 반환합니다")
 
         # 응답 반환
         return {

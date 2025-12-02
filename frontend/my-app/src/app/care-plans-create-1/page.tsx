@@ -45,18 +45,40 @@ export default function CarePlanCreate1Page() {
           }
         }
 
+        // sessionStorage에서 성향 점수 읽기
+        let patientPersonality = {
+          empathy_score: 75,        // 기본값
+          activity_score: 55,       // 기본값
+          patience_score: 80,       // 기본값
+          independence_score: 45    // 기본값
+        }
+
+        const personalityScoresStr = sessionStorage.getItem('personality_scores')
+        if (personalityScoresStr) {
+          try {
+            const personalityScores = JSON.parse(personalityScoresStr)
+            patientPersonality = {
+              empathy_score: personalityScores.empathy_score || 75,
+              activity_score: personalityScores.activity_score || 55,
+              patience_score: personalityScores.patience_score || 80,
+              independence_score: personalityScores.independence_score || 45
+            }
+            console.log('[성향 점수] sessionStorage에서 로드됨:', patientPersonality)
+          } catch (e) {
+            console.error("성향 점수 파싱 오류", e)
+            console.log('[성향 점수] 기본값 사용')
+          }
+        } else {
+          console.log('[성향 점수] sessionStorage에 데이터 없음, 기본값 사용')
+        }
+
         console.log("AI 케어 플랜 생성 시작...")
 
         // AI 생성 요청
         await apiPost('/api/care-plans/generate', {
           patient_id: patientId ? parseInt(patientId) : 1,
           caregiver_id: caregiverId,
-          patient_personality: {
-            empathy_score: 75,
-            activity_score: 55,
-            patience_score: 80,
-            independence_score: 45
-          },
+          patient_personality: patientPersonality,
           care_requirements: careRequirements
         })
 
@@ -77,11 +99,18 @@ export default function CarePlanCreate1Page() {
       })
     }, 30) // 3초 동안 진행
 
-    // 3초 후 다음 페이지로 이동
-    const timer = setTimeout(() => {
-      generatePlan()
-      router.push('/care-plans-create-2')
-    }, 3000)
+    // 0.5초 후 AI 플랜 생성 시작 (화면 로딩 후)
+    const timer = setTimeout(async () => {
+      try {
+        await generatePlan()  // ✅ 완료 대기
+        console.log("✅ 케어 플랜 생성 및 저장 완료")
+        router.push('/care-plans-create-2')
+      } catch (err) {
+        console.error("❌ 케어 플랜 생성 실패:", err)
+        // 실패해도 진행 (API 호출은 성공했거나 폴백 로직이 있음)
+        router.push('/care-plans-create-2')
+      }
+    }, 500)  // 0.5초 후 시작
 
     return () => {
       clearInterval(interval)
