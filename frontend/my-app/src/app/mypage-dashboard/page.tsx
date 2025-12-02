@@ -111,7 +111,7 @@ export default function MyPageDashboard() {
 
         <div className="space-y-4">
           {/* Weekly Report */}
-          <button className="w-full h-[76px] bg-white rounded-[10px] shadow-[0px_1px_4px_#00000040] flex items-center justify-between px-6 hover:bg-gray-50 transition-colors">
+          <button onClick={() => router.push('/mypage-care-report')} className="w-full h-[76px] bg-white rounded-[10px] shadow-[0px_1px_4px_#00000040] flex items-center justify-between px-6 hover:bg-gray-50 transition-colors">
             <span className="text-lg font-semibold text-[#353535]">지난 주간 리포트 모아보기</span>
             <ChevronRight className="w-5 h-5 text-[#c8c8c8]" />
           </button>

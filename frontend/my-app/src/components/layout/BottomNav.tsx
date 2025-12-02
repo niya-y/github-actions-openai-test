@@ -10,7 +10,25 @@ export function BottomNav() {
 
     // Hide on onboarding, login, welcome, and specific sub-pages where nav might distract
     // Show on main tabs: /home, /schedule, /mypage-message, /mypage-dashboard
-    if (pathname === "/" || pathname === "/onboarding" || pathname === "/personality-test" || pathname === "/login" || pathname === "/welcome") {
+    const hiddenPages = [
+        "/",
+        "/onboarding",
+        "/personality-test",
+        "/login",
+        "/welcome",
+        "/guardians",
+        "/patient-condition-1",
+        "/patient-condition-2",
+        "/patient-condition-3",
+        "/caregiver-finder",
+        "/caregiver-result-loading",
+        "/caregiver-result-list",
+        "/care-plans-create-1",
+        "/care-plans-create-3",
+        "/care-plans-create-4"
+    ]
+
+    if (hiddenPages.includes(pathname)) {
         return null
     }
 
