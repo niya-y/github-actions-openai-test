@@ -93,7 +93,10 @@ class CarePlanGenerationService:
         patient_info: Dict[str, Any],
         caregiver_info: Dict[str, Any],
         patient_personality: Dict[str, float],
-        care_requirements: Dict[str, Any]
+        care_requirements: Dict[str, Any],
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        days: Optional[int] = None
     ) -> CarePlanResponse:
         """
         환자 정보와 간병인 정보를 기반으로 케어 플랜을 생성합니다.
@@ -103,6 +106,9 @@ class CarePlanGenerationService:
             caregiver_info: 간병인 정보 (이름, 경력, 전문성 등)
             patient_personality: 환자 성격 점수
             care_requirements: 돌봄 요구사항
+            start_date: 케어 시작일 (YYYY-MM-DD)
+            end_date: 케어 종료일 (YYYY-MM-DD)
+            days: 일수 (start_date/end_date 대신 사용 가능)
 
         Returns:
             생성된 케어 플랜
@@ -120,42 +126,90 @@ class CarePlanGenerationService:
             return self._generate_fallback_care_plan(patient_info, caregiver_info)
 
         try:
-            # 프롬프트 구성
-            prompt = self._build_prompt(
-                patient_info,
-                caregiver_info,
-                patient_personality,
-                care_requirements
-            )
+            # 일수 계산
+            from datetime import datetime
+            try:
+                if start_date and end_date:
+                    start = datetime.strptime(start_date, "%Y-%m-%d")
+                    end = datetime.strptime(end_date, "%Y-%m-%d")
+                    calculated_days = (end - start).days + 1  # 시작일 포함
+                    # 최대 7일로 제한
+                    calculated_days = min(calculated_days, 7)
+                elif days:
+                    calculated_days = min(days, 7)
+                else:
+                    calculated_days = 7  # 기본값
+            except ValueError as date_error:
+                logger.error(f"❌ Date parsing error: {str(date_error)}")
+                calculated_days = 7  # 기본값으로 폴백
 
-            # Azure OpenAI 호출
-            response = self.client.chat.completions.create(
-                model=self.deployment_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "당신은 전문적인 간병 플래너입니다. 환자와 간병인의 정보를 기반으로 최적의 케어 플랜을 생성합니다. 항상 유효한 JSON 형식으로 응답하세요."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=2000
-            )
+            logger.info(f"📅 케어 플랜 생성 기간: {calculated_days}일")
+
+            # 프롬프트 구성
+            try:
+                prompt = self._build_prompt(
+                    patient_info,
+                    caregiver_info,
+                    patient_personality,
+                    care_requirements,
+                    calculated_days
+                )
+            except Exception as prompt_error:
+                logger.error(f"❌ Prompt building error: {str(prompt_error)}")
+                raise
+
+            # Azure OpenAI 호출 (타임아웃 설정)
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.deployment_name,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "당신은 전문적인 간병 플래너입니다. 환자와 간병인의 정보를 기반으로 최적의 케어 플랜을 생성합니다. 항상 유효한 JSON 형식으로 응답하세요."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    timeout=30  # 30초 타임아웃
+                )
+            except Exception as api_error:
+                logger.error(f"❌ Azure OpenAI API error: {str(api_error)}")
+                raise
+
+            # 응답 검증
+            if not response or not response.choices or len(response.choices) == 0:
+                logger.error("❌ Empty response from Azure OpenAI")
+                raise ValueError("Azure OpenAI returned empty response")
 
             # 응답 파싱
-            response_text = response.choices[0].message.content
-            care_plan_json = self._extract_json(response_text)
+            try:
+                response_text = response.choices[0].message.content
+                if not response_text:
+                    logger.error("❌ Response content is empty")
+                    raise ValueError("Response content is empty")
 
-            # JSON을 CarePlanResponse로 변환
-            care_plan = CarePlanResponse(**care_plan_json)
-            logger.info(f"Care plan generated successfully for patient")
-            return care_plan
+                care_plan_json = self._extract_json(response_text)
+            except (ValueError, json.JSONDecodeError) as parse_error:
+                logger.error(f"❌ Response parsing error: {str(parse_error)}")
+                raise
+
+            # JSON을 CarePlanResponse로 변환 (검증)
+            try:
+                care_plan = CarePlanResponse(**care_plan_json)
+                logger.info(f"✅ Care plan generated successfully for patient: {patient_info.get('name', 'Unknown')}")
+                return care_plan
+            except Exception as validation_error:
+                logger.error(f"❌ CarePlanResponse validation error: {str(validation_error)}")
+                logger.error(f"❌ Invalid JSON structure: {care_plan_json}")
+                raise
 
         except Exception as e:
-            logger.error(f"Error generating care plan: {e}")
+            logger.error(f"❌ Error generating care plan: {str(e)}")
+            logger.warning("⚠️ Falling back to default care plan generation")
             # 폴백: 하드코딩된 케어 플랜 반환
             return self._generate_fallback_care_plan(patient_info, caregiver_info)
 
@@ -164,12 +218,13 @@ class CarePlanGenerationService:
         patient_info: Dict[str, Any],
         caregiver_info: Dict[str, Any],
         patient_personality: Dict[str, float],
-        care_requirements: Dict[str, Any]
+        care_requirements: Dict[str, Any],
+        days: int = 7
     ) -> str:
         """AI에게 전달할 프롬프트 구성"""
 
         prompt = f"""
-다음 환자와 간병인 정보를 기반으로 7일간의 상세한 케어 플랜을 생성하세요.
+다음 환자와 간병인 정보를 기반으로 {days}일간의 상세한 케어 플랜을 생성하세요.
 
 ## 환자 정보
 - 이름: {patient_info.get('name', '환자')}
@@ -215,7 +270,7 @@ class CarePlanGenerationService:
         }}
       ]
     }},
-    ...7일 모두 작성...
+    ...{days}일 모두 작성 (월요일부터 시작)...
   ],
   "caregiver_feedback": {{
     "overall_comment": "종합 의견",
@@ -245,75 +300,103 @@ class CarePlanGenerationService:
         return prompt
 
     def _extract_json(self, text: str) -> Dict[str, Any]:
-        """응답에서 JSON 추출"""
+        """응답에서 JSON 추출 - 에러 처리 강화"""
+        if not text or not isinstance(text, str):
+            logger.error(f"❌ Invalid response text type: {type(text)}")
+            raise ValueError("Response text is not a valid string")
+
         # JSON 블록 찾기
         start_idx = text.find("{")
         end_idx = text.rfind("}") + 1
 
-        if start_idx != -1 and end_idx > start_idx:
-            json_str = text[start_idx:end_idx]
-            return json.loads(json_str)
+        if start_idx == -1 or end_idx <= start_idx:
+            logger.error(f"❌ No JSON block found in response. Text: {text[:200]}")
+            raise ValueError("No valid JSON block found in response")
 
-        raise ValueError("No valid JSON found in response")
+        json_str = text[start_idx:end_idx]
+
+        try:
+            parsed = json.loads(json_str)
+            logger.info("✅ JSON parsing successful")
+            return parsed
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON parsing failed: {str(e)}")
+            logger.error(f"❌ JSON string: {json_str[:300]}")
+            raise ValueError(f"Invalid JSON format: {str(e)}")
 
     def _generate_fallback_care_plan(
         self,
         patient_info: Dict[str, Any],
         caregiver_info: Dict[str, Any]
     ) -> CarePlanResponse:
-        """폴백: 기본 케어 플랜 생성"""
+        """폴백: 기본 7일 케어 플랜 생성"""
 
         patient_name = patient_info.get("name", "환자")
         caregiver_name = caregiver_info.get("name", "간병인")
 
-        return CarePlanResponse(
-            patient_name=patient_name,
-            caregiver_name=caregiver_name,
-            summary={
-                "total_activities": 42,
-                "participants": 4,
-                "daily_hours": 6
-            },
-            weekly_schedule=[
+        # 기본 활동 템플릿
+        default_activities = [
+            {"time": "07:00", "title": "기상 도움", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"},
+            {"time": "07:30", "title": "아침 식사 준비", "assignee": "👩 가족"},
+            {"time": "08:00", "title": "약 복용 확인", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}", "note": "⚠️ 아스피린 100mg, 메트포민 500mg"},
+            {"time": "09:00", "title": "가벼운 스트레칭", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"},
+            {"time": "10:00", "title": "산책 (날씨 좋을 시)", "assignee": "👩 가족"},
+            {"time": "12:00", "title": "점심 식사 준비", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"},
+            {"time": "14:00", "title": "낮잠 및 휴식", "assignee": "👨 환자"},
+            {"time": "15:00", "title": "독서 또는 가벼운 활동", "assignee": "👩 가족"},
+            {"time": "17:00", "title": "저녁 식사 준비", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"},
+            {"time": "19:00", "title": "TV 시청 또는 대화", "assignee": "👩 가족"},
+            {"time": "20:30", "title": "저녁 준비 및 약 복용", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"},
+            {"time": "21:00", "title": "취침 준비", "assignee": f"👨‍⚕️ 간병인 {caregiver_name}"}
+        ]
+
+        # 7일 스케줄 생성
+        days_of_week = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+
+        try:
+            weekly_schedule = [
                 DaySchedule(
-                    day="월요일",
+                    day=day,
+                    activities=[
+                        ActivityItem(
+                            time=act["time"],
+                            title=act["title"],
+                            assignee=act["assignee"],
+                            note=act.get("note", "")
+                        )
+                        for act in default_activities
+                    ]
+                )
+                for day in days_of_week
+            ]
+            logger.info(f"✅ Fallback care plan generated with {len(weekly_schedule)} days")
+        except Exception as e:
+            logger.error(f"❌ Error generating fallback schedule: {str(e)}")
+            # 최소한의 폴백 데이터
+            weekly_schedule = [
+                DaySchedule(
+                    day=days_of_week[0],
                     activities=[
                         ActivityItem(
                             time="07:00",
                             title="기상 도움",
                             assignee=f"👨‍⚕️ 간병인 {caregiver_name}"
-                        ),
-                        ActivityItem(
-                            time="07:30",
-                            title="아침 식사 준비",
-                            assignee="👩 가족"
-                        ),
-                        ActivityItem(
-                            time="08:00",
-                            title="약 복용 확인",
-                            assignee=f"👨‍⚕️ 간병인 {caregiver_name}",
-                            note="⚠️ 아스피린 100mg, 메트포민 500mg"
-                        ),
-                        ActivityItem(
-                            time="09:00",
-                            title="가벼운 스트레칭",
-                            assignee=f"👨‍⚕️ 간병인 {caregiver_name}"
-                        ),
-                        ActivityItem(
-                            time="10:00",
-                            title="산책 (날씨 좋을 시)",
-                            assignee="👩 가족"
-                        ),
-                        ActivityItem(
-                            time="12:00",
-                            title="점심 식사 준비",
-                            assignee=f"👨‍⚕️ 간병인 {caregiver_name}"
                         )
                     ]
                 )
-            ],
+            ]
+
+        return CarePlanResponse(
+            patient_name=patient_name,
+            caregiver_name=caregiver_name,
+            summary={
+                "total_activities": len(default_activities) * 7,
+                "participants": 4,
+                "daily_hours": 14
+            },
+            weekly_schedule=weekly_schedule,
             caregiver_feedback=CaregiverFeedback(
-                overall_comment="전반적으로 잘 구성된 케어 플랜입니다.",
+                overall_comment="기본 케어 플랜입니다. 환자의 건강상태와 선호도에 따라 조정해주세요.",
                 activity_reviews=[
                     ActivityReview(
                         activity_time="08:00",
@@ -322,6 +405,13 @@ class CarePlanGenerationService:
                         reason="order",
                         suggestion="약 복용은 식사 후 30분 뒤에 하는 것이 더 좋습니다.",
                         alternative_time="08:30"
+                    ),
+                    ActivityReview(
+                        activity_time="10:00",
+                        activity_title="산책 (날씨 좋을 시)",
+                        feedback_type="appropriate",
+                        reason="health",
+                        suggestion="규칙적인 산책은 혈액순환과 정신건강에 매우 도움이 됩니다."
                     )
                 ]
             )
