@@ -6,7 +6,8 @@ import { ChevronLeft, Bell, ChevronRight } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { apiGet, apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
-import type { CaregiverMatch, MatchingResponse } from '@/types/api'
+import type { CaregiverMatch, MatchingResponse, ApiResponse } from '@/types/api'
+import { validateCaregiverMatch, validateApiResponse } from '@/types/guards'
 
 export default function CaregiverResultListPage() {
   const router = useRouter()
@@ -84,27 +85,42 @@ export default function CaregiverResultListPage() {
       setLoading(true)
       setError(null)
 
-      // 1. matching_id 검증
+      // 1. 간병인 정보 타입 검증
+      if (!validateCaregiverMatch(caregiver)) {
+        console.error('[Caregiver Result List] Invalid caregiver data:', caregiver)
+        throw new Error('유효하지 않은 간병인 정보입니다')
+      }
+
+      // 2. matching_id 검증
       if (!caregiver.matching_id) {
         throw new Error('간병인 매칭 ID가 없습니다')
       }
 
-      // 2. API 호출 필수
+      // 3. API 호출 필수
       console.log('[Caregiver Result List] Selecting caregiver:', caregiver.caregiver_name)
-      const response = await apiPost<any>(`/api/matching/${caregiver.matching_id}/select`, {})
+      const response = await apiPost<ApiResponse>(`/api/matching/${caregiver.matching_id}/select`, {})
 
-      // 3. 응답 검증
-      if (!response || response.status === 'error') {
+      // 4. 응답 검증
+      if (!response) {
+        throw new Error('서버에서 응답을 받지 못했습니다')
+      }
+
+      if (!validateApiResponse(response)) {
+        console.error('[Caregiver Result List] Invalid response structure:', response)
         throw new Error('간병인 선택 실패 - 서버 오류')
+      }
+
+      if (response.status === 'error' || response.success === false) {
+        throw new Error(response.message || '간병인 선택 실패 - 서버 오류')
       }
 
       console.log('[Caregiver Result List] Caregiver selected successfully:', caregiver.caregiver_name)
 
-      // 4. 성공 시에만 sessionStorage에 저장
+      // 5. 성공 시에만 sessionStorage에 저장
       sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
       sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
 
-      // 5. 성공 시에만 페이지 이동
+      // 6. 성공 시에만 페이지 이동
       router.push('/mypage-mycaregiver')
     } catch (err) {
       console.error('[Caregiver Result List] Error selecting caregiver:', err)

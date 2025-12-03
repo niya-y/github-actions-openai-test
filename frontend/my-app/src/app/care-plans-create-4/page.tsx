@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { background, firstPrimary, secondPrimary } from '../colors'
 import { apiPost, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
+import type { ApiResponse } from '@/types/api'
+import { validateApiResponse } from '@/types/guards'
 
 export default function Screen11AIValidation() {
   const router = useRouter()
@@ -64,14 +66,24 @@ export default function Screen11AIValidation() {
       sessionStorage.setItem('care_plan_approved_at', new Date().toISOString())
 
       // 스케줄 상태를 confirmed로 업데이트
-      const response = await apiPut<any>('/api/care-plans/schedules/status', {
+      const response = await apiPut<ApiResponse>('/api/care-plans/schedules/status', {
         patient_id: parseInt(patientId),
         status: 'confirmed'
       })
 
-      // API 응답 검증
-      if (!response || response.status === 'error') {
+      // API 응답 검증 - 타입 가드 함수 사용
+      if (!response) {
+        throw new Error('서버에서 응답을 받지 못했습니다')
+      }
+
+      if (!validateApiResponse(response)) {
+        console.error('[Care Plans Validation] Invalid response structure:', response)
         throw new Error('스케줄 상태 업데이트 실패')
+      }
+
+      // 성공 여부 확인
+      if (response.status === 'error' || response.success === false) {
+        throw new Error(response.message || '스케줄 상태 업데이트 실패')
       }
 
       console.log('[Care Plans Validation] Decisions saved and status updated to confirmed')

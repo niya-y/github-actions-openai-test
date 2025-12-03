@@ -5,32 +5,18 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, Bell, ChevronDown, ChevronRight, Check, Image as ImageIcon, Plus } from "lucide-react"
 import { cn } from "@/utils/cn"
 import { apiGet } from "@/utils/api"
+import type { PatientResponse, CareLog, ScheduleResponse } from "@/types/api"
+import { validateCareLogArray, validateScheduleResponse } from "@/types/guards"
 
-interface Patient {
-  patient_id: number
-  name: string
-  age: number
-  gender: string
+// 화면 전용 확장 타입
+interface PatientWithLatest extends PatientResponse {
   created_at: string
-}
-
-interface CareLog {
-  log_id: number
-  schedule_id: number
-  care_date: string
-  task_name: string
-  category: string
-  scheduled_time: string | null
-  is_completed: boolean
-  completed_at: string | null
-  note: string
-  photo_url: string
 }
 
 export default function SchedulePage() {
     const router = useRouter()
-    const [patients, setPatients] = useState<Patient[]>([])
-    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+    const [patients, setPatients] = useState<PatientWithLatest[]>([])
+    const [selectedPatient, setSelectedPatient] = useState<PatientWithLatest | null>(null)
     const [patientName, setPatientName] = useState<string>("환자")
     const [showPatientDropdown, setShowPatientDropdown] = useState(false)
     const [currentDate, setCurrentDate] = useState(new Date())
@@ -81,7 +67,7 @@ export default function SchedulePage() {
         fetchPatients()
     }, [])
 
-    const handleSelectPatient = (patient: Patient) => {
+    const handleSelectPatient = (patient: PatientWithLatest) => {
         setSelectedPatient(patient)
         setPatientName(patient.name)
         sessionStorage.setItem('selected_patient_id', patient.patient_id.toString())
@@ -99,14 +85,30 @@ export default function SchedulePage() {
             console.log('[Schedule] Fetching schedules for patient:', patientId, 'date:', dateStr)
 
             // confirmed 상태의 스케줄만 조회
-            const response = await apiGet<any>(`/api/patients/${patientId}/schedules?date=${dateStr}&status=confirmed`)
+            const response = await apiGet<ScheduleResponse>(`/api/patients/${patientId}/schedules?date=${dateStr}&status=confirmed`)
             console.log('[Schedule] Schedules response:', response)
 
-            if (response?.care_logs) {
-                setCareLogs(response.care_logs)
-            } else {
+            // 응답 검증 - 타입 가드 함수 사용
+            if (!response) {
+                console.log('[Schedule] No response from API')
                 setCareLogs([])
+                return
             }
+
+            if (!validateScheduleResponse(response)) {
+                console.error('[Schedule] Invalid response structure:', response)
+                setCareLogs([])
+                return
+            }
+
+            // care_logs 배열 검증
+            if (!validateCareLogArray(response.care_logs)) {
+                console.log('[Schedule] Invalid care_logs array')
+                setCareLogs([])
+                return
+            }
+
+            setCareLogs(response.care_logs)
         } catch (err) {
             console.error('[Schedule] Error fetching schedules:', err)
             setCareLogs([])

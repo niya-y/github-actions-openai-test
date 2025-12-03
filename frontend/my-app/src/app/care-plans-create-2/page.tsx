@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { background, firstPrimary } from '../colors'
 import { apiGet, apiPost, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
-import type { CarePlansResponse, Schedule, MealPlan } from '@/types/api'
+import type { CarePlansResponse, Schedule, MealPlan, CareLog, ScheduleResponse } from '@/types/api'
+import { validateScheduleResponse, validateCareLog, validateCareLogArray } from '@/types/guards'
 
 export default function Screen9Schedule() {
   const router = useRouter()
@@ -55,18 +56,24 @@ export default function Screen9Schedule() {
       const apiUrl = `/api/patients/${patientId}/schedules?date=${today}&status=pending_review`
       console.log('[CarePlans] Fetching from:', apiUrl)
 
-      const response = await apiGet<any>(apiUrl)
+      const response = await apiGet<ScheduleResponse>(apiUrl)
 
       console.log('[CarePlans] API Response:', response)
 
-      // 응답 구조 검증
+      // 응답 검증 - 타입 가드 함수 사용
       if (!response) {
         throw new Error('서버에서 응답을 받지 못했습니다')
       }
 
-      // care_logs 필드 검증
-      if (!response.care_logs || !Array.isArray(response.care_logs)) {
-        console.log('[CarePlans] Invalid care_logs structure, using empty array')
+      // 응답 타입 검증
+      if (!validateScheduleResponse(response)) {
+        console.error('[CarePlans] Invalid response structure:', response)
+        throw new Error('유효하지 않은 응답 구조입니다')
+      }
+
+      // care_logs 배열 검증
+      if (!validateCareLogArray(response.care_logs)) {
+        console.log('[CarePlans] Invalid care_logs in response')
         setSchedules([])
         setLoading(false)
         return
@@ -79,18 +86,14 @@ export default function Screen9Schedule() {
         return
       }
 
-      // care_logs를 schedules 형식으로 변환 (타입 검증 포함)
-      const convertedSchedules = response.care_logs
-        .filter((log: any) => {
-          // 필수 필드 검증
-          return typeof log.schedule_id === 'number' &&
-                 typeof log.task_name === 'string' &&
-                 typeof log.is_completed === 'boolean'
-        })
-        .map((log: any) => ({
+      // care_logs를 schedules 형식으로 변환 (모든 항목이 검증됨)
+      const convertedSchedules: Schedule[] = response.care_logs
+        .filter((log: CareLog) => validateCareLog(log))
+        .map((log: CareLog) => ({
           schedule_id: log.schedule_id,
           title: log.task_name,
           start_time: log.scheduled_time || '00:00',
+          end_time: '00:00', // API에서 제공하지 않는 경우
           category: log.category || 'other',
           is_completed: log.is_completed
         }))
