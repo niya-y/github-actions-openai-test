@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     # MFDS API
     MFDS_API_KEY: str = ""
 
+    # Azure OpenAI Timeout (Care Plan Generation)
+    AZURE_OPENAI_TIMEOUT: int = 30  # seconds
+
+    # XGBoost Model (Caregiver Matching)
+    XGBOOST_MODEL_PATH: str = ""
+    XGBOOST_MODEL_FALLBACK: bool = True
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE: str = "logs/app.log"
+
+    # Feature Flags
+    ENABLE_AI_CARE_PLAN: bool = True
+    ENABLE_MATCHING_ALGORITHM: bool = True
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

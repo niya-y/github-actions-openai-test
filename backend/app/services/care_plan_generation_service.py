@@ -64,6 +64,7 @@ class CarePlanGenerationService:
         endpoint = settings.AZURE_OPENAI_ENDPOINT
         deployment_name = settings.AZURE_OPENAI_DEPLOYMENT
         api_version = settings.AZURE_OPENAI_API_VERSION
+        timeout = settings.AZURE_OPENAI_TIMEOUT
 
         logger.info("=" * 80)
         logger.info("[CarePlanGenerationService] 초기화 중...")
@@ -73,6 +74,7 @@ class CarePlanGenerationService:
         logger.info(f"Deployment exists: {bool(deployment_name)}")
         logger.info(f"Deployment value: {deployment_name}")
         logger.info(f"API Version: {api_version}")
+        logger.info(f"Timeout: {timeout} seconds")
         logger.info("=" * 80)
 
         if not all([api_key, endpoint, deployment_name]):
@@ -84,9 +86,11 @@ class CarePlanGenerationService:
             self.client = AzureOpenAI(
                 api_key=api_key,
                 api_version=api_version,
-                azure_endpoint=endpoint
+                azure_endpoint=endpoint,
+                timeout=timeout
             )
             self.deployment_name = deployment_name
+            self.timeout = timeout
 
     def generate_care_plan(
         self,

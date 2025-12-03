@@ -430,6 +430,40 @@ async def generate_care_plan(
         )
 
 
+# 스케줄 상태 전환 규칙 정의
+VALID_STATUS_TRANSITIONS = {
+    'pending_review': ['under_review'],  # 케어 플랜 요청 시
+    'under_review': ['reviewed', 'confirmed'],  # 검토 중 → 검토 완료 또는 확정
+    'reviewed': ['confirmed'],  # 검토 완료 → 확정
+    'confirmed': ['scheduled', 'cancelled'],  # 확정 → 스케줄 진행 또는 취소
+    'scheduled': ['completed', 'cancelled'],  # 진행 중 → 완료 또는 취소
+    'completed': [],  # 최종 상태
+    'cancelled': [],  # 최종 상태
+}
+
+def validate_status_transition(current_status: str, new_status: str) -> tuple[bool, str]:
+    """
+    상태 전환이 유효한지 검증합니다.
+
+    Returns:
+        (is_valid, error_message)
+    """
+    # 상태가 동일한 경우는 허용
+    if current_status == new_status:
+        return True, ""
+
+    # 현재 상태가 유효한지 확인
+    if current_status not in VALID_STATUS_TRANSITIONS:
+        return False, f"현재 상태 '{current_status}'는 유효하지 않습니다"
+
+    # 전환 가능한 상태인지 확인
+    allowed_transitions = VALID_STATUS_TRANSITIONS[current_status]
+    if new_status not in allowed_transitions:
+        return False, f"'{current_status}' 상태에서 '{new_status}' 상태로 직접 전환할 수 없습니다. 가능한 상태: {', '.join(allowed_transitions)}"
+
+    return True, ""
+
+
 class ScheduleStatusUpdateRequest(BaseModel):
     """스케줄 상태 업데이트 요청"""
     patient_id: int = Field(..., description="환자 ID")
@@ -442,10 +476,18 @@ async def update_schedules_status(
     db: Session = Depends(get_db),
 ):
     """
-    환자의 모든 pending_review 상태 스케줄의 상태를 일괄 업데이트합니다.
+    환자의 모든 pending_review/under_review/reviewed 상태 스케줄의 상태를 일괄 업데이트합니다.
 
     - care-plans-create-2에서 "요청하기" 버튼 클릭 시: pending_review → under_review
     - care-plans-create-4에서 "완료된 일정보기" 버튼 클릭 시: under_review/reviewed → confirmed
+
+    상태 전환 규칙 검증:
+    - pending_review → under_review
+    - under_review → reviewed, confirmed
+    - reviewed → confirmed
+    - confirmed → scheduled, cancelled
+    - scheduled → completed, cancelled
+    - completed, cancelled → (최종 상태)
     """
     try:
         logger.info(f"📝 스케줄 상태 업데이트 시작: patient_id={request.patient_id}, new_status={request.status}")
@@ -454,6 +496,14 @@ async def update_schedules_status(
         patient = db.query(Patient).filter(Patient.patient_id == request.patient_id).first()
         if not patient:
             raise HTTPException(status_code=404, detail="환자를 찾을 수 없습니다.")
+
+        # 대상 상태가 유효한지 확인
+        if request.status not in VALID_STATUS_TRANSITIONS:
+            logger.error(f"❌ 유효하지 않은 대상 상태: {request.status}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"유효하지 않은 상태입니다: {request.status}"
+            )
 
         # 업데이트할 스케줄 조회 (pending_review, under_review, reviewed 상태만)
         schedules = db.query(Schedule).filter(
@@ -465,22 +515,60 @@ async def update_schedules_status(
             logger.warning(f"⚠️ 업데이트할 스케줄이 없습니다: patient_id={request.patient_id}")
             return {
                 "success": True,
+                "status": "success",
                 "updated_count": 0,
                 "message": "업데이트할 스케줄이 없습니다."
             }
 
-        # 상태 일괄 업데이트
+        # 상태 전환 검증 및 일괄 업데이트
         updated_count = 0
+        failed_transitions = []
+
         for schedule in schedules:
+            # 상태 전환 유효성 검증
+            is_valid, error_msg = validate_status_transition(schedule.status, request.status)
+
+            if not is_valid:
+                logger.warning(f"⚠️ 상태 전환 실패 [schedule_id={schedule.schedule_id}]: {error_msg}")
+                failed_transitions.append({
+                    "schedule_id": schedule.schedule_id,
+                    "current_status": schedule.status,
+                    "attempted_status": request.status,
+                    "error": error_msg
+                })
+                continue
+
             schedule.status = request.status
             updated_count += 1
+            logger.info(f"✅ 상태 업데이트 [schedule_id={schedule.schedule_id}]: {schedule.status} → {request.status}")
 
-        db.commit()
+        # 트랜잭션 커밋
+        try:
+            db.commit()
+            logger.info(f"✅ 스케줄 상태 업데이트 완료: {updated_count}개 스케줄 → {request.status}")
+        except Exception as commit_error:
+            db.rollback()
+            logger.error(f"❌ 트랜잭션 커밋 실패: {str(commit_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail="스케줄 상태 업데이트 중 데이터베이스 오류가 발생했습니다"
+            )
 
-        logger.info(f"✅ 스케줄 상태 업데이트 완료: {updated_count}개 스케줄 → {request.status}")
+        # 응답 반환
+        if failed_transitions:
+            logger.warning(f"⚠️ 일부 스케줄의 상태 전환에 실패했습니다: {len(failed_transitions)}개")
+            return {
+                "success": True,
+                "status": "success",
+                "updated_count": updated_count,
+                "failed_count": len(failed_transitions),
+                "failed_transitions": failed_transitions,
+                "message": f"{updated_count}개의 스케줄이 {request.status} 상태로 변경되었습니다. ({len(failed_transitions)}개 실패)"
+            }
 
         return {
             "success": True,
+            "status": "success",
             "updated_count": updated_count,
             "message": f"{updated_count}개의 스케줄이 {request.status} 상태로 변경되었습니다."
         }
