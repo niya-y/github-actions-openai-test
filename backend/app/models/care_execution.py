@@ -58,7 +58,7 @@ class Schedule(Base):
     care_logs = relationship("CareLog", back_populates="schedule", cascade="all, delete-orphan")
     
     __table_args__ = (
-        CheckConstraint("status IN ('scheduled', 'completed', 'cancelled')", name="schedules_status_check"),
+        CheckConstraint("status IN ('pending_review', 'under_review', 'reviewed', 'confirmed', 'scheduled', 'completed', 'cancelled')", name="schedules_status_check"),
         Index("idx_schedules_patient", "patient_id"),
         Index("idx_schedules_matching", "matching_id"),
         Index("idx_schedules_date", "care_date", "status"),
