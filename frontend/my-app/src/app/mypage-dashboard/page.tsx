@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,9 +17,39 @@ import {
   Home,
   Settings
 } from "lucide-react"
+import { apiGet } from "@/utils/api"
+
+interface DashboardData {
+  user: {
+    name: string
+    email: string
+    phone: string
+    user_type: string
+  }
+}
 
 export default function MyPageDashboard() {
   const router = useRouter()
+  const [userName, setUserName] = useState<string>("사용자")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await apiGet<any>("/api/users/me/dashboard")
+        if (response && response.user && response.user.name) {
+          setUserName(response.user.name)
+        }
+      } catch (error) {
+        console.error("사용자 정보 조회 실패:", error)
+        setUserName("사용자")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserInfo()
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard'] pb-24">
@@ -60,7 +91,7 @@ export default function MyPageDashboard() {
           />
         </div>
         <div className="flex flex-col">
-          <h2 className="text-xl font-bold text-[#353535] mb-1">김보호 님</h2>
+          <h2 className="text-xl font-bold text-[#353535] mb-1">{userName} 님</h2>
           <button className="flex items-center gap-1 text-sm font-medium text-[#828282] hover:text-[#646464] transition-colors">
             내 정보 수정 <ChevronRight className="w-4 h-4" />
           </button>
