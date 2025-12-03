@@ -23,13 +23,30 @@ export default function CaregiverResultListPage() {
         const patientNameStored = sessionStorage.getItem('patient_name') || '고객'
         setPatientName(patientNameStored)
 
-        // SessionStorage에서 매칭 결과 조회 (최우선)
+        // 1단계: API에서 매칭 결과 조회
+        try {
+          console.log('[Caregiver Result List] Fetching from API...')
+          const response = await apiGet<MatchingResponse>('/api/matching/results')
+
+          if (response?.matches && Array.isArray(response.matches) && response.matches.length > 0) {
+            console.log('[Caregiver Result List] Matches from API:', response.matches.length, 'caregivers')
+            setMatches(response.matches)
+            // sessionStorage에도 저장 (캐싱)
+            sessionStorage.setItem('matching_results', JSON.stringify(response))
+            setLoading(false)
+            return
+          }
+        } catch (apiErr) {
+          console.warn('[Caregiver Result List] API fetch failed, trying sessionStorage fallback:', apiErr)
+        }
+
+        // 2단계: API 실패 시 sessionStorage에서 조회
         const storedResults = sessionStorage.getItem('matching_results')
         if (storedResults) {
           try {
             const parsed: MatchingResponse = JSON.parse(storedResults)
-            if (parsed.matches && parsed.matches.length > 0) {
-              console.log('[Caregiver Result List] Matches from session:', parsed.matches.length, 'caregivers')
+            if (parsed.matches && Array.isArray(parsed.matches) && parsed.matches.length > 0) {
+              console.log('[Caregiver Result List] Matches from sessionStorage (fallback):', parsed.matches.length, 'caregivers')
               setMatches(parsed.matches)
               setLoading(false)
               return
@@ -39,9 +56,10 @@ export default function CaregiverResultListPage() {
           }
         }
 
-        // SessionStorage 데이터 없으면 빈 결과
-        console.log('[Caregiver Result List] No session data available')
+        // 3단계: 모두 실패
+        console.log('[Caregiver Result List] No matching results available')
         setMatches([])
+        setError(new Error('매칭 결과를 불러올 수 없습니다. 다시 시도해주세요.'))
       } catch (err) {
         console.error('[Caregiver Result List] Error:', err)
         setError(err as Error)
@@ -63,28 +81,37 @@ export default function CaregiverResultListPage() {
 
   const handleSelectCaregiver = async (caregiver: CaregiverMatch) => {
     try {
-      // 매칭 선택 API 호출
-      if (caregiver.matching_id) {
-        await apiPost(`/api/matching/${caregiver.matching_id}/select`, {})
-        console.log('[Caregiver Result List] Caregiver selected:', caregiver.caregiver_name)
+      setLoading(true)
+      setError(null)
+
+      // 1. matching_id 검증
+      if (!caregiver.matching_id) {
+        throw new Error('간병인 매칭 ID가 없습니다')
       }
 
-      // sessionStorage에 저장
+      // 2. API 호출 필수
+      console.log('[Caregiver Result List] Selecting caregiver:', caregiver.caregiver_name)
+      const response = await apiPost<any>(`/api/matching/${caregiver.matching_id}/select`, {})
+
+      // 3. 응답 검증
+      if (!response || response.status === 'error') {
+        throw new Error('간병인 선택 실패 - 서버 오류')
+      }
+
+      console.log('[Caregiver Result List] Caregiver selected successfully:', caregiver.caregiver_name)
+
+      // 4. 성공 시에만 sessionStorage에 저장
       sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
-      if (caregiver.matching_id) {
-        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
-      }
+      sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
 
-      // 페이지 이동
+      // 5. 성공 시에만 페이지 이동
       router.push('/mypage-mycaregiver')
     } catch (err) {
       console.error('[Caregiver Result List] Error selecting caregiver:', err)
-      // 에러 무시하고 계속 진행
-      sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
-      if (caregiver.matching_id) {
-        sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
-      }
-      router.push('/mypage-mycaregiver')
+      setError(err as Error)
+      // 에러 발생 시 페이지 이동 안함
+    } finally {
+      setLoading(false)
     }
   }
 

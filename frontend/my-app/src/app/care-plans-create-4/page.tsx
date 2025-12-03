@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary, secondPrimary } from '../colors'
-import { apiPost } from '@/utils/api'
+import { apiPost, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 
 export default function Screen11AIValidation() {
@@ -59,16 +59,24 @@ export default function Screen11AIValidation() {
 
       console.log('[Care Plans Validation] Submitting decisions:', payload)
 
-      // API 호출 (선택사항 - 백엔드가 준비되어 있으면 활성화)
-      // await apiPost('/api/patients/care-plan-feedback', payload)
-
       // sessionStorage에 결정 사항 저장
       sessionStorage.setItem('care_plan_decisions', JSON.stringify(decisions))
       sessionStorage.setItem('care_plan_approved_at', new Date().toISOString())
 
-      console.log('[Care Plans Validation] Decisions saved successfully')
+      // 스케줄 상태를 confirmed로 업데이트
+      const response = await apiPut<any>('/api/care-plans/schedules/status', {
+        patient_id: parseInt(patientId),
+        status: 'confirmed'
+      })
 
-      // /schedule 페이지로 이동
+      // API 응답 검증
+      if (!response || response.status === 'error') {
+        throw new Error('스케줄 상태 업데이트 실패')
+      }
+
+      console.log('[Care Plans Validation] Decisions saved and status updated to confirmed')
+
+      // 성공 시에만 페이지 이동
       router.push('/schedule')
     } catch (err) {
       console.error('[Care Plans Validation] Error submitting decisions:', err)
