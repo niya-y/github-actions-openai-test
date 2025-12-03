@@ -287,3 +287,36 @@ export async function apiDeleteWithRetry<T>(
 ): Promise<T> {
     return withRetry(() => apiDelete<T>(url), retryOptions);
 }
+
+/**
+ * Cached API functions
+ * 캐싱 기능이 포함된 API 함수들 (주로 GET 요청에 사용)
+ */
+
+import { withCache, apiCache, invalidateCache, clearCache, getCacheStatus } from './cache';
+
+export interface CacheOptions {
+    ttl?: number; // Cache TTL in milliseconds (default: 5 minutes)
+    forceRefresh?: boolean; // Ignore cache and fetch fresh data
+}
+
+export async function apiGetCached<T>(
+    url: string,
+    cacheOptions?: CacheOptions
+): Promise<T> {
+    const { ttl, forceRefresh = false } = cacheOptions || {};
+
+    // forceRefresh 옵션이 있으면 캐시 무시하고 새로 fetch
+    if (forceRefresh) {
+        const result = await apiGet<T>(url);
+        // 새로운 결과를 캐시에 저장
+        apiCache.set(url, result, ttl);
+        return result;
+    }
+
+    // 캐시를 사용하여 fetch
+    return withCache(() => apiGet<T>(url), url, ttl);
+}
+
+// 캐시 관리 함수 export
+export { apiCache, invalidateCache, clearCache, getCacheStatus };
