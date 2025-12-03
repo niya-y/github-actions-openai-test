@@ -8,9 +8,13 @@ import { apiGet, apiPost } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import type { CaregiverMatch, MatchingResponse, ApiResponse } from '@/types/api'
 import { validateCaregiverMatch, validateApiResponse } from '@/types/guards'
+import { useAppContext, useSelectedMatching } from '@/context/AppContext'
 
 export default function CaregiverResultListPage() {
   const router = useRouter()
+  const appContext = useAppContext()
+  const { selectedMatching, setSelectedMatching } = useSelectedMatching()
+
   const [matches, setMatches] = useState<CaregiverMatch[]>([])
   const [patientName, setPatientName] = useState<string>('고객')
   const [loading, setLoading] = useState(true)
@@ -116,7 +120,11 @@ export default function CaregiverResultListPage() {
 
       console.log('[Caregiver Result List] Caregiver selected successfully:', caregiver.caregiver_name)
 
-      // 5. 성공 시에만 sessionStorage에 저장
+      // 5. 성공 시에만 Context와 sessionStorage에 저장
+      setSelectedMatching({
+        matching_id: caregiver.matching_id,
+        caregiver: caregiver
+      })
       sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
       sessionStorage.setItem('matching_id', caregiver.matching_id.toString())
 

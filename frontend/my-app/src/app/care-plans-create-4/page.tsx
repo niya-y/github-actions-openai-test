@@ -7,9 +7,13 @@ import { apiPost, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import type { ApiResponse } from '@/types/api'
 import { validateApiResponse } from '@/types/guards'
+import { useAppContext, useCarePlanDecisions } from '@/context/AppContext'
 
 export default function Screen11AIValidation() {
   const router = useRouter()
+  const appContext = useAppContext()
+  const { carePlanDecisions, setCarePlanDecisions } = useCarePlanDecisions()
+
   const [decisions, setDecisions] = useState<{
     [key: string]: string
   }>({
@@ -44,8 +48,11 @@ export default function Screen11AIValidation() {
     setError(null)
 
     try {
-      const patientId = sessionStorage.getItem('patient_id')
-      const matchingId = sessionStorage.getItem('matching_id')
+      // Context 또는 sessionStorage에서 환자 ID 조회
+      const patientId = appContext.currentPatient?.patient_id?.toString() ||
+                        sessionStorage.getItem('patient_id')
+      const matchingId = appContext.selectedMatching?.matching_id?.toString() ||
+                         sessionStorage.getItem('matching_id')
 
       if (!patientId) {
         throw new Error('환자 정보를 찾을 수 없습니다.')
@@ -61,7 +68,8 @@ export default function Screen11AIValidation() {
 
       console.log('[Care Plans Validation] Submitting decisions:', payload)
 
-      // sessionStorage에 결정 사항 저장
+      // Context와 sessionStorage에 결정 사항 저장
+      setCarePlanDecisions(decisions)
       sessionStorage.setItem('care_plan_decisions', JSON.stringify(decisions))
       sessionStorage.setItem('care_plan_approved_at', new Date().toISOString())
 

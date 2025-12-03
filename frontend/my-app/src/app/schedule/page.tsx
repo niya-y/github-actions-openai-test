@@ -7,6 +7,7 @@ import { cn } from "@/utils/cn"
 import { apiGet } from "@/utils/api"
 import type { PatientResponse, CareLog, ScheduleResponse } from "@/types/api"
 import { validateCareLogArray, validateScheduleResponse } from "@/types/guards"
+import { useAppContext, useCurrentPatient, useCarePlan } from "@/context/AppContext"
 
 // 화면 전용 확장 타입
 interface PatientWithLatest extends PatientResponse {
@@ -15,6 +16,10 @@ interface PatientWithLatest extends PatientResponse {
 
 export default function SchedulePage() {
     const router = useRouter()
+    const appContext = useAppContext()
+    const { currentPatient, setCurrentPatient } = useCurrentPatient()
+    const { carePlan, setCarePlan } = useCarePlan()
+
     const [patients, setPatients] = useState<PatientWithLatest[]>([])
     const [selectedPatient, setSelectedPatient] = useState<PatientWithLatest | null>(null)
     const [patientName, setPatientName] = useState<string>("환자")
@@ -108,6 +113,13 @@ export default function SchedulePage() {
                 return
             }
 
+            // Context와 로컬 상태에 케어 플랜 저장
+            setCarePlan({
+                patient_id: patientId,
+                status: 'confirmed',
+                schedules: response.care_logs,
+                lastUpdated: new Date().toISOString()
+            })
             setCareLogs(response.care_logs)
         } catch (err) {
             console.error('[Schedule] Error fetching schedules:', err)
