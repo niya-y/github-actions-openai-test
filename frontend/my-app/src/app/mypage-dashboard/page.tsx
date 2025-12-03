@@ -36,9 +36,16 @@ export default function MyPageDashboard() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
+        console.log("사용자 정보 조회 시작...")
         const response = await apiGet<any>("/api/users/me/dashboard")
+        console.log("API 응답:", response)
+
         if (response && response.user && response.user.name) {
+          console.log("사용자 이름 설정:", response.user.name)
           setUserName(response.user.name)
+        } else {
+          console.warn("응답에 user.name이 없습니다:", response)
+          setUserName("사용자")
         }
       } catch (error) {
         console.error("사용자 정보 조회 실패:", error)

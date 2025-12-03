@@ -70,28 +70,34 @@ export async function apiGet<T>(url: string): Promise<T> {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-        mode: 'cors',
-    });
+    try {
+        const response = await fetch(`${BASE_URL}${url}`, {
+            method: 'GET',
+            headers,
+            credentials: 'include',
+            mode: 'cors',
+        });
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+            console.error(`API Error - URL: ${BASE_URL}${url}`, `Headers:`, headers);
 
-        // 401 Unauthorized - 토큰 만료, 로그인 페이지로 리다이렉트
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-            return Promise.reject(new Error('Session expired. Please login again.'));
+            // 401 Unauthorized - 토큰 만료, 로그인 페이지로 리다이렉트
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return Promise.reject(new Error('Session expired. Please login again.'));
+            }
+
+            throw new Error(`API call failed: ${response.status} ${response.statusText}`);
         }
 
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+        return response.json();
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
     }
-
-    return response.json();
 }
 
 export async function apiPut<T>(url: string, body: any): Promise<T> {
