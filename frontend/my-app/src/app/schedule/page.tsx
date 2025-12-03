@@ -98,7 +98,8 @@ export default function SchedulePage() {
             const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
             console.log('[Schedule] Fetching schedules for patient:', patientId, 'date:', dateStr)
 
-            const response = await apiGet<any>(`/api/patients/${patientId}/schedules?date=${dateStr}`)
+            // confirmed 상태의 스케줄만 조회
+            const response = await apiGet<any>(`/api/patients/${patientId}/schedules?date=${dateStr}&status=confirmed`)
             console.log('[Schedule] Schedules response:', response)
 
             if (response?.care_logs) {
