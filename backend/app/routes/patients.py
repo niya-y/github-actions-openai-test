@@ -136,9 +136,10 @@ async def get_my_patients(
                 detail="보호자 정보를 생성할 수 없습니다."
             )
 
-    # 모든 환자 조회 (최신 순)
+    # 모든 환자 조회 (최신 순, 삭제되지 않은 환자만)
     patients = db.query(Patient).filter(
-        Patient.guardian_id == guardian.guardian_id
+        Patient.guardian_id == guardian.guardian_id,
+        Patient.is_deleted == False
     ).order_by(Patient.created_at.desc()).all()
 
     if not patients:
@@ -647,11 +648,14 @@ async def get_patient_caregiver(
     ).first()
 
     # 5. 응답 반환
+    # specialties는 ARRAY 타입이므로 이미 list로 저장됨
+    specialties_list = caregiver.specialties if isinstance(caregiver.specialties, list) else (caregiver.specialties.split("|") if caregiver.specialties else [])
+
     return {
         "caregiver_id": caregiver.caregiver_id,
         "caregiver_name": caregiver_user.name if caregiver_user else "간병인",
         "experience_years": caregiver.experience_years or 0,
-        "specialties": caregiver.specialties.split("|") if caregiver.specialties else [],
+        "specialties": specialties_list,
         "hourly_rate": caregiver.hourly_rate or 0,
         "avg_rating": float(caregiver.avg_rating) if caregiver.avg_rating else 0,
         "matching_id": matching_result.matching_id,
@@ -703,4 +707,146 @@ async def get_patient_care_plans(
     return {
         "patient_id": patient_id,
         "schedules": result_list
+    }
+
+
+@router.get("/patients/{patient_id}/schedules")
+async def get_patient_schedules(
+    patient_id: int,
+    date: str = None,  # YYYY-MM-DD 형식, 없으면 오늘
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    환자의 특정 날짜 스케줄 및 케어 로그 조회
+
+    - date: YYYY-MM-DD 형식 (없으면 오늘 날짜)
+    - 해당 날짜의 모든 스케줄과 케어 로그 반환
+    """
+    from app.models.care_execution import Schedule, CareLog
+    from datetime import datetime, date as date_type
+
+    # 날짜 파싱
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        target_date = date_type.today()
+
+    print(f"🔍 [DEBUG] 스케줄 조회: patient_id={patient_id}, date={target_date}")
+
+    # 환자 소유권 확인
+    guardian = db.query(Guardian).filter(
+        Guardian.user_id == current_user.user_id
+    ).first()
+
+    if not guardian:
+        raise HTTPException(status_code=404, detail="보호자 정보를 찾을 수 없습니다")
+
+    patient = db.query(Patient).filter(
+        Patient.patient_id == patient_id,
+        Patient.guardian_id == guardian.guardian_id,
+        Patient.is_deleted == False
+    ).first()
+
+    if not patient:
+        raise HTTPException(status_code=404, detail="환자 정보를 찾을 수 없습니다")
+
+    # 해당 날짜의 스케줄 조회
+    schedules = db.query(Schedule).filter(
+        Schedule.patient_id == patient_id,
+        Schedule.care_date == target_date
+    ).order_by(Schedule.schedule_id).all()
+
+    # 스케줄별 케어 로그 조회
+    result = []
+    for schedule in schedules:
+        care_logs = db.query(CareLog).filter(
+            CareLog.schedule_id == schedule.schedule_id
+        ).order_by(CareLog.scheduled_time).all()
+
+        for log in care_logs:
+            result.append({
+                "log_id": log.log_id,
+                "schedule_id": schedule.schedule_id,
+                "care_date": schedule.care_date.isoformat(),
+                "task_name": log.task_name,
+                "category": log.category.value if hasattr(log.category, 'value') else str(log.category),
+                "scheduled_time": log.scheduled_time.strftime("%H:%M") if log.scheduled_time else None,
+                "is_completed": log.is_completed,
+                "completed_at": log.completed_at.isoformat() if log.completed_at else None,
+                "note": log.note or "",
+                "photo_url": log.photo_url or ""
+            })
+
+    print(f"✅ [DEBUG] 조회된 케어 로그 수: {len(result)}")
+
+    return {
+        "patient_id": patient_id,
+        "date": target_date.isoformat(),
+        "care_logs": result
+    }
+
+
+@router.delete("/patients/{patient_id}", status_code=status.HTTP_200_OK)
+async def delete_patient(
+    patient_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    환자 소프트 삭제 (is_deleted = True)
+
+    1. 환자 접근 권한 확인
+    2. is_deleted 플래그를 True로 설정
+    3. 매칭 기록은 그대로 보존
+    """
+    # 1. 환자 접근 권한 확인
+    guardian = db.query(Guardian).filter(
+        Guardian.user_id == current_user.user_id
+    ).first()
+
+    if not guardian:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="보호자 정보가 없습니다"
+        )
+
+    patient = db.query(Patient).filter(
+        Patient.patient_id == patient_id,
+        Patient.guardian_id == guardian.guardian_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="환자를 찾을 수 없거나 접근 권한이 없습니다"
+        )
+
+    # 이미 삭제된 환자인 경우 (그냥 성공으로 처리)
+    if patient.is_deleted:
+        print(f"⚠️ [INFO] 이미 삭제된 환자: patient_id={patient_id}")
+        return {
+            "message": "환자가 이미 삭제되었습니다",
+            "patient_id": patient_id,
+            "patient_name": patient.name,
+            "deleted_at": patient.updated_at.isoformat()
+        }
+
+    # 2. 소프트 삭제 (is_deleted = True)
+    patient.is_deleted = True
+    patient.updated_at = datetime.now()
+
+    db.commit()
+
+    print(f"✅ [INFO] 환자 소프트 삭제 완료: patient_id={patient_id}, name={patient.name}")
+
+    # 3. 응답 반환
+    return {
+        "message": "환자가 성공적으로 삭제되었습니다",
+        "patient_id": patient_id,
+        "patient_name": patient.name,
+        "deleted_at": patient.updated_at.isoformat()
     }

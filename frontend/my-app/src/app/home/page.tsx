@@ -30,6 +30,16 @@ interface Caregiver {
   specialties?: string[]
 }
 
+interface CareLog {
+  log_id: number
+  task_name: string
+  category: string
+  scheduled_time: string | null
+  is_completed: boolean
+  completed_at: string | null
+  note: string
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [patientName, setPatientName] = useState<string>("김철수님")
@@ -38,6 +48,7 @@ export default function HomePage() {
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null)
   const [loading, setLoading] = useState(true)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [todayLogs, setTodayLogs] = useState<CareLog[]>([])
 
   // 🔧 FETCH PATIENTS: Get all patients and show latest
   useEffect(() => {
@@ -110,10 +121,26 @@ export default function HomePage() {
 
   // 🔧 환자의 간병인 정보 불러오기
   const fetchCaregiverInfo = async (patientId: number) => {
+    // patientId가 유효하지 않으면 건너뛰기
+    if (!patientId || patientId <= 0) {
+      console.log('[Home] Invalid patient ID, skipping caregiver fetch')
+      setCaregiver(null)
+      return
+    }
+
     try {
+      console.log('[Home] Fetching caregiver for patient ID:', patientId)
       const response = await apiGet<any>(`/api/patients/${patientId}/caregiver`)
-      console.log('[Home] Caregiver info:', response)
-      if (response?.caregiver_id) {
+      console.log('[Home] Caregiver API Response:', response)
+
+      // API 응답에서 caregiver_id가 있고 null이 아닌 경우
+      if (response && response.caregiver_id !== null && response.caregiver_id !== undefined) {
+        console.log('[Home] Setting caregiver data:', {
+          caregiver_id: response.caregiver_id,
+          name: response.caregiver_name || '할당된 간병인',
+          experience_years: response.experience_years,
+          specialties: response.specialties
+        })
         setCaregiver({
           caregiver_id: response.caregiver_id,
           name: response.caregiver_name || '할당된 간병인',
@@ -121,10 +148,12 @@ export default function HomePage() {
           specialties: response.specialties
         })
       } else {
+        console.log('[Home] No caregiver assigned (caregiver_id is null or undefined)')
         setCaregiver(null)
       }
-    } catch (err) {
-      console.log('[Home] No caregiver assigned:', err)
+    } catch (err: any) {
+      // 네트워크 오류나 서버 오류는 조용히 처리
+      console.warn('[Home] Could not fetch caregiver info (this is normal if no caregiver is assigned):', err?.message || err)
       setCaregiver(null)
     }
   }
@@ -139,12 +168,50 @@ export default function HomePage() {
     console.log('[Home] Selected patient:', patient.name, 'ID:', patient.patient_id)
   }
 
-  // 환자 ID 변경 시 간병인 정보 업데이트
+  // 환자 ID 변경 시 간병인 정보 및 오늘 활동 로그 업데이트
   useEffect(() => {
     if (patientId) {
       fetchCaregiverInfo(patientId)
+      fetchTodayLogs(patientId)
     }
   }, [patientId])
+
+  // 🔧 FETCH TODAY LOGS: Get today's activity logs
+  const fetchTodayLogs = async (patientId: number) => {
+    if (!patientId || patientId <= 0) {
+      console.log('[Home] Invalid patient ID for logs, skipping')
+      setTodayLogs([])
+      return
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+      console.log('[Home] Fetching today logs for patient:', patientId, 'date:', today)
+
+      const response = await apiGet<any>(`/api/patients/${patientId}/schedules?date=${today}`)
+      console.log('[Home] Today logs response:', response)
+
+      if (response?.care_logs && response.care_logs.length > 0) {
+        // 완료된 것만 필터링하고 최신 3개만 표시
+        const completedLogs = response.care_logs
+          .filter((log: CareLog) => log.is_completed)
+          .sort((a: CareLog, b: CareLog) => {
+            // completed_at 기준 내림차순 정렬
+            if (!a.completed_at) return 1
+            if (!b.completed_at) return -1
+            return new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+          })
+          .slice(0, 3)
+
+        setTodayLogs(completedLogs)
+      } else {
+        setTodayLogs([])
+      }
+    } catch (err: any) {
+      console.warn('[Home] Could not fetch today logs:', err?.message || err)
+      setTodayLogs([])
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F9F9F9] font-['Pretendard'] pb-24">
@@ -258,7 +325,14 @@ export default function HomePage() {
 
           {/* Caregiver Status Card */}
           {caregiver ? (
-            <div className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0] cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200">
+            <div
+              onClick={() => {
+                // Save caregiver info to sessionStorage for mypage-mycaregiver page
+                sessionStorage.setItem('selectedCaregiver', JSON.stringify(caregiver))
+                router.push('/mypage-mycaregiver')
+              }}
+              className="w-full bg-white rounded-[20px] p-5 flex items-center justify-between shadow-sm border border-[#f0f0f0] cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#18d4c6] flex items-center justify-center shrink-0">
                   <Image
@@ -274,7 +348,14 @@ export default function HomePage() {
                   <span className="text-[#828282] text-xs">오늘 09:00 ~ 18:00 예정</span>
                 </div>
               </div>
-              <button className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center active:scale-90 active:bg-[#E8E8E8] hover:bg-[#EBEBEB] transition-all duration-150 cursor-pointer">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // TODO: 전화 기능 구현
+                  alert('전화 기능은 준비 중입니다')
+                }}
+                className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center active:scale-90 active:bg-[#E8E8E8] hover:bg-[#EBEBEB] transition-all duration-150 cursor-pointer"
+              >
                 <Phone className="w-5 h-5 text-[#555555]" />
               </button>
             </div>
@@ -310,32 +391,28 @@ export default function HomePage() {
 
             {/* Timeline Items */}
             <div className="space-y-8">
-              {/* Item 1 */}
-              <div className="relative flex gap-4">
-                <div className="relative z-10 w-5 h-5 rounded-full border-[3px] border-[#18d4c6] bg-white shrink-0 mt-1"></div>
-                <div className="flex flex-col">
-                  <span className="text-[#353535] font-bold text-base">낮잠 / 휴식</span>
-                  <span className="text-[#828282] text-xs mt-1">14:32 / 1시간 30분 주무셨습니다.</span>
+              {todayLogs.length === 0 ? (
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  오늘 완료된 활동이 없습니다
                 </div>
-              </div>
-
-              {/* Item 2 */}
-              <div className="relative flex gap-4">
-                <div className="relative z-10 w-5 h-5 rounded-full border-[3px] border-[#18d4c6] bg-white shrink-0 mt-1"></div>
-                <div className="flex flex-col">
-                  <span className="text-[#353535] font-bold text-base">점심 식사</span>
-                  <span className="text-[#828282] text-xs mt-1">12:15 / 식사량 80% 완료 (사진 있음)</span>
-                </div>
-              </div>
-
-              {/* Item 3 */}
-              <div className="relative flex gap-4">
-                <div className="relative z-10 w-5 h-5 rounded-full border-[3px] border-[#828282] bg-white shrink-0 mt-1"></div>
-                <div className="flex flex-col">
-                  <span className="text-[#353535] font-bold text-base">약 복용</span>
-                  <span className="text-[#828282] text-xs mt-1">08:05 / 아침약 복용 완료</span>
-                </div>
-              </div>
+              ) : (
+                todayLogs.map((log, index) => (
+                  <div key={log.log_id} className="relative flex gap-4">
+                    <div className={`relative z-10 w-5 h-5 rounded-full border-[3px] ${
+                      index === 0 ? 'border-[#18d4c6]' : 'border-[#828282]'
+                    } bg-white shrink-0 mt-1`}></div>
+                    <div className="flex flex-col">
+                      <span className="text-[#353535] font-bold text-base">{log.task_name}</span>
+                      <span className="text-[#828282] text-xs mt-1">
+                        {log.completed_at
+                          ? new Date(log.completed_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                          : log.scheduled_time
+                        } / {log.note || '완료'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

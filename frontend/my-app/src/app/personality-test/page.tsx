@@ -241,52 +241,69 @@ export default function PersonalityTestPage() {
     }
   }
 
-  // 🔧 OPTION 1: 규칙 기반 성격 분석 함수
+  // 마크다운 스타일 볼드(**텍스트**)를 JSX로 변환하는 헬퍼 함수
+  const parseTextWithBold = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/)
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="font-bold text-gray-700">{part.slice(2, -2)}</strong>
+      }
+      return <span key={index}>{part}</span>
+    })
+  }
+
+  // 🔧 OPTION 1: 규칙 기반 성격 분석 함수 (개선된 버전)
   const generateAnalysis = (scores: {
     empathy_score: number
     activity_score: number
     patience_score: number
     independence_score: number
   }): string => {
-    const analyses: string[] = []
-
-    // 공감 능력 분석
-    if (scores.empathy_score > 75) {
-      analyses.push("타인의 감정에 민감하고 공감 능력이 뛰어나 따뜻한 관계 형성이 가능합니다")
-    } else if (scores.empathy_score > 50) {
-      analyses.push("적절한 공감 능력으로 환자와 좋은 관계를 유지할 수 있습니다")
-    } else {
-      analyses.push("실무적이고 객관적인 접근으로 효율적인 업무 처리가 가능합니다")
+    // 미리 정의된 분석 문장 맵 (간결하게 85% 길이로 축소, 핵심 키워드 볼드 처리)
+    const ANALYSIS_MAP: { [key: string]: { [key: string]: string } } = {
+      empathy: {
+        very_high: "**공감 능력**이 뛰어나 환자와 **깊은 신뢰 관계**를 형성합니다",
+        high: "환자의 **마음을 이해**하고 **좋은 관계**를 유지합니다",
+        moderate: "필요할 때 **공감을 표현**하는 **균형잡힌 접근**이 가능합니다",
+        low: "**실무 중심적 접근**으로 **효율적인 업무 처리**가 가능합니다"
+      },
+      activity: {
+        very_high: "**적극적인 성향**으로 **역동적인 돌봄**을 제공합니다",
+        high: "필요한 순간에 **기민하게 대응**할 수 있습니다",
+        moderate: "필요시 **활동적으로 대응**하는 **유연성**을 갖췄습니다",
+        low: "**차분한 성향**으로 **안정적이고 집중력** 있는 돌봄이 가능합니다"
+      },
+      patience: {
+        very_high: "**높은 인내심**으로 어려운 상황에서도 **차분히 대처**합니다",
+        high: "환자의 **다양한 요구**에 **안정적으로 대응**할 수 있습니다",
+        moderate: "**인내심을 발휘**하면서 **효율적인 문제 해결**을 추구합니다",
+        low: "**빠른 판단과 행동력**으로 **신속한 문제 해결**이 가능합니다"
+      },
+      independence: {
+        very_high: "**높은 독립성과 책임감**으로 **자율적인 판단**이 가능합니다",
+        high: "지시를 따르면서도 필요시 **자율적인 판단**을 합니다",
+        moderate: "**협력과 자율성의 균형**을 유지하며 **유연하게 대응**합니다",
+        low: "**협력적인 성향**으로 다른 사람들과 **조화롭게 일**합니다"
+      }
     }
 
-    // 활동성 분석
-    if (scores.activity_score > 75) {
-      analyses.push("활발하고 적극적인 성향으로 주도적이고 역동적인 돌봄을 제공할 수 있습니다")
-    } else if (scores.activity_score > 50) {
-      analyses.push("적절한 활동성으로 필요한 순간에 잘 대응할 수 있습니다")
-    } else {
-      analyses.push("차분하고 신중한 성향으로 안정적이고 집중력 있는 돌봄이 가능합니다")
+    // 점수를 레벨로 변환
+    const getLevel = (score: number): string => {
+      if (score >= 80) return 'very_high'
+      if (score >= 60) return 'high'
+      if (score >= 40) return 'moderate'
+      return 'low'
     }
 
-    // 인내심 분석
-    if (scores.patience_score > 75) {
-      analyses.push("높은 인내심과 관용으로 어려운 상황에서도 차분히 대처하며 오래 관계를 유지할 수 있습니다")
-    } else if (scores.patience_score > 50) {
-      analyses.push("적절한 인내심으로 환자의 다양한 요구에 대응할 수 있습니다")
-    } else {
-      analyses.push("빠른 판단과 행동력으로 효율적인 문제 해결이 가능합니다")
-    }
+    const analyses: string[] = [
+      ANALYSIS_MAP.empathy[getLevel(scores.empathy_score)],
+      ANALYSIS_MAP.activity[getLevel(scores.activity_score)],
+      ANALYSIS_MAP.patience[getLevel(scores.patience_score)],
+      ANALYSIS_MAP.independence[getLevel(scores.independence_score)]
+    ]
 
-    // 자립성 분석
-    if (scores.independence_score > 75) {
-      analyses.push("독립적이고 책임감 있는 성향으로 주어진 역할을 충실히 수행하고 자율적인 판단을 잘 합니다")
-    } else if (scores.independence_score > 50) {
-      analyses.push("적절한 독립성으로 지시를 잘 따르면서도 자율적으로 일할 수 있습니다")
-    } else {
-      analyses.push("협력적이고 팀 지향적 성향으로 다른 사람과의 조화를 잘 맞추며 함께 일할 수 있습니다")
-    }
-
-    return analyses.join(". ")
+    // 문장별로 줄바꿈하여 가독성 향상
+    return analyses.join(".\n") + "."
   }
 
   const generateRecommendation = (scores: {
@@ -295,21 +312,51 @@ export default function PersonalityTestPage() {
     patience_score: number
     independence_score: number
   }): string => {
-    const traits: string[] = []
+    // 미리 정의된 조합 문장 (12개 조합 × 12개 조합 = 모든 경우의 수)
+    const RECOMMENDATION_MAP: { [key: string]: string } = {
+      // 공감형 주도 (empathy 최고점)
+      '공감형_인내형': '따뜻한 마음과 깊은 인내심을 가진 돌봄형 간병인',
+      '공감형_활동형': '공감 능력과 활동성을 겸비한 활발한 간병인',
+      '공감형_자립형': '따뜻하면서도 책임감 있는 전문적인 간병인',
 
-    if (scores.empathy_score > 70) traits.push("따뜻한")
-    if (scores.activity_score > 70) traits.push("활발한")
-    if (scores.patience_score > 70) traits.push("인내심 있는")
-    if (scores.independence_score > 70) traits.push("책임감 있는")
+      // 인내형 주도 (patience 최고점)
+      '인내형_공감형': '차분하면서도 따뜻한 안정형 간병인',
+      '인내형_활동형': '꾸준하고 활동적인 균형형 간병인',
+      '인내형_자립형': '신중하고 자율적인 신뢰형 간병인',
 
-    if (scores.empathy_score < 45) traits.push("실무적인")
-    if (scores.activity_score < 45) traits.push("신중한")
+      // 활동형 주도 (activity 최고점)
+      '활동형_공감형': '활발하면서도 세심한 역동형 간병인',
+      '활동형_인내형': '적극적이면서 끈기 있는 실행형 간병인',
+      '활동형_자립형': '주도적이고 책임감 있는 리더형 간병인',
 
-    if (traits.length === 0) {
-      traits.push("균형 잡힌")
+      // 자립형 주도 (independence 최고점)
+      '자립형_공감형': '자율적이면서 배려심 깊은 프로형 간병인',
+      '자립형_인내형': '독립적이고 차분한 전문가형 간병인',
+      '자립형_활동형': '능동적이고 책임감 있는 자기주도형 간병인',
+
+      // 균형형 (모든 점수가 비슷한 경우)
+      '균형형': '4가지 역량이 고르게 발달한 균형 잡힌 간병인'
     }
 
-    return `${traits.join("하고 ")}하며 신뢰할 수 있는 간병인`
+    // 점수 기준 우선순위 정렬
+    const scoreRanking = [
+      { type: '공감형', score: scores.empathy_score },
+      { type: '인내형', score: scores.patience_score },
+      { type: '활동형', score: scores.activity_score },
+      { type: '자립형', score: scores.independence_score }
+    ].sort((a, b) => b.score - a.score)
+
+    const [first, second] = scoreRanking
+
+    // 최고점과 차점의 차이가 10점 미만이면 균형형
+    if (first.score - second.score < 10 && first.score < 70) {
+      return RECOMMENDATION_MAP['균형형']
+    }
+
+    // 조합 키 생성
+    const key = `${first.type}_${second.type}`
+
+    return RECOMMENDATION_MAP[key] || RECOMMENDATION_MAP['균형형']
   }
 
   const submitPersonalityTest = async () => {
@@ -401,8 +448,8 @@ export default function PersonalityTestPage() {
             </p>
           </div>
 
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between items-center text-sm">
+          <div className="space-y-1 mb-6">
+            <div className="flex justify-between items-center py-1">
               <span className="text-gray-500 text-xs">공감 능력</span>
               <div className="flex items-center gap-2">
                 <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -417,7 +464,7 @@ export default function PersonalityTestPage() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center py-1">
               <span className="text-gray-500 text-xs">활동성</span>
               <div className="flex items-center gap-2">
                 <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -432,7 +479,7 @@ export default function PersonalityTestPage() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center py-1">
               <span className="text-gray-500 text-xs">인내심</span>
               <div className="flex items-center gap-2">
                 <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -447,7 +494,7 @@ export default function PersonalityTestPage() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center py-1">
               <span className="text-gray-500 text-xs">자립성</span>
               <div className="flex items-center gap-2">
                 <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -463,9 +510,13 @@ export default function PersonalityTestPage() {
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 mb-6 leading-relaxed px-2">
-            {results.ai_analysis || "분석이 준비 중입니다..."}
-          </p>
+          <div className="text-xs text-gray-500 mb-6 leading-relaxed px-2">
+            {(results.ai_analysis || "분석이 준비 중입니다...").split('\n').map((line, index) => (
+              <div key={index} className="mb-2">
+                {parseTextWithBold(line)}
+              </div>
+            ))}
+          </div>
 
           <div className="flex flex-col gap-3 w-full">
             <Button

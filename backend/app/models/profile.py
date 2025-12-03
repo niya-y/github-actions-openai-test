@@ -78,7 +78,10 @@ class Patient(Base):
     # 요양 정보
     care_level = Column(SQLEnum(CareLevelEnum, name="care_level_enum"), nullable=True)
     profile_image_url = Column(Text, nullable=True)
-    
+
+    # 소프트 삭제
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     

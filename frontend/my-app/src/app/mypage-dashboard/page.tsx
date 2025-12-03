@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Bell,
   User,
   Plus,
@@ -15,9 +16,19 @@ import {
   Calendar,
   MessageCircle,
   Home,
-  Settings
+  Settings,
+  Trash2
 } from "lucide-react"
-import { apiGet } from "@/utils/api"
+import { apiGet, apiDelete } from "@/utils/api"
+
+interface Patient {
+  patient_id: number
+  name: string
+  birth_date: string
+  gender: string
+  care_address: string
+  relationship?: string
+}
 
 interface DashboardData {
   user: {
@@ -31,49 +42,126 @@ interface DashboardData {
 export default function MyPageDashboard() {
   const router = useRouter()
   const [userName, setUserName] = useState<string>("사용자")
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
+
+  // 환자 선택 핸들러
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient)
+    sessionStorage.setItem('selected_patient_id', patient.patient_id.toString())
+    setShowDropdown(false)
+  }
+
+  // 삭제 확인 팝업 열기
+  const handleDeleteClick = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation() // 드롭다운 닫힘 방지
+    setPatientToDelete(patient)
+    setShowDeleteConfirm(true)
+  }
+
+  // 삭제 실행
+  const handleConfirmDelete = async () => {
+    if (!patientToDelete) return
+
+    try {
+      await apiDelete(`/api/patients/${patientToDelete.patient_id}`)
+
+      // 삭제 성공: 목록에서 제거
+      const updatedPatients = patients.filter(p => p.patient_id !== patientToDelete.patient_id)
+      setPatients(updatedPatients)
+
+      // 삭제된 환자가 현재 선택된 환자였다면 다른 환자 선택
+      if (selectedPatient?.patient_id === patientToDelete.patient_id) {
+        if (updatedPatients.length > 0) {
+          setSelectedPatient(updatedPatients[0])
+          sessionStorage.setItem('selected_patient_id', updatedPatients[0].patient_id.toString())
+        } else {
+          setSelectedPatient(null)
+          sessionStorage.removeItem('selected_patient_id')
+        }
+      }
+
+      setShowDeleteConfirm(false)
+      setPatientToDelete(null)
+    } catch (error) {
+      console.error('환자 삭제 실패:', error)
+      alert('환자 삭제에 실패했습니다.')
+    }
+  }
+
+  // 삭제 취소
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false)
+    setPatientToDelete(null)
+  }
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const fetchData = async () => {
       try {
-        // 디버깅용: 환경변수와 토큰 확인
-        console.log("=== API 호출 시작 ===")
-        console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL || "설정되지 않음 (기본값: http://localhost:8000)")
-        const token = localStorage.getItem('access_token')
-        console.log("access_token 보유:", token ? "있음" : "없음")
-
-        // 임시: API 호출 대신 테스트 데이터 사용
-        // TODO: API 호출이 안정화되면 다시 활성화
-        setTimeout(() => {
-          // 테스트용 하드코딩된 값
-          setUserName("김철수")
-          setLoading(false)
-        }, 100)
-
-        // const response = await apiGet<any>("/api/users/me/dashboard")
-        // console.log("=== API 응답 성공 ===")
-        // console.log("응답 데이터:", response)
-
-        // if (response && response.user && response.user.name) {
-        //   console.log("✅ 사용자 이름 설정:", response.user.name)
-        //   setUserName(response.user.name)
-        // } else {
-        //   console.warn("⚠️ 응답에 user.name이 없습니다:", response)
-        //   setUserName("사용자")
-        // }
-      } catch (error) {
-        console.error("=== API 호출 실패 ===")
-        console.error("에러:", error)
-        if (error instanceof Error) {
-          console.error("에러 메시지:", error.message)
+        // 사용자 정보 가져오기
+        const dashboardResponse = await apiGet<DashboardData>("/api/users/me/dashboard")
+        if (dashboardResponse && dashboardResponse.user && dashboardResponse.user.name) {
+          setUserName(dashboardResponse.user.name)
         }
+
+        // 환자 정보 가져오기 (home 화면과 동일한 메커니즘)
+        const patientsResponse = await apiGet<any>('/api/patients/me')
+
+        if (patientsResponse?.patients && patientsResponse.patients.length > 0) {
+          setPatients(patientsResponse.patients)
+
+          // sessionStorage에서 선택된 환자 확인
+          const savedPatientId = sessionStorage.getItem('selected_patient_id')
+
+          if (savedPatientId) {
+            const patient = patientsResponse.patients.find(
+              (p: Patient) => p.patient_id === parseInt(savedPatientId)
+            )
+            if (patient) {
+              setSelectedPatient(patient)
+            } else {
+              // 저장된 환자가 없으면 최신 환자 선택
+              const latestPatient = patientsResponse.latest_patient || patientsResponse.patients[0]
+              setSelectedPatient(latestPatient)
+            }
+          } else {
+            // 저장된 환자가 없으면 최신 환자 선택
+            const latestPatient = patientsResponse.latest_patient || patientsResponse.patients[0]
+            setSelectedPatient(latestPatient)
+          }
+        }
+
+        setLoading(false)
+      } catch (error) {
+        console.error("데이터 가져오기 실패:", error)
         setUserName("사용자")
         setLoading(false)
       }
     }
 
-    fetchUserInfo()
+    fetchData()
   }, [])
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDropdown) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showDropdown])
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard'] pb-24">
@@ -130,25 +218,81 @@ export default function MyPageDashboard() {
         <h3 className="text-sm font-medium text-[#828282] mb-4">환자 관리</h3>
 
         <div className="space-y-4">
-          {/* Existing Patient Card */}
-          <div className="w-full h-[76px] bg-white rounded-[10px] shadow-[0px_1px_4px_#00000040] flex items-center px-5 relative">
-            <div className="w-10 h-10 bg-[#18d4c6] rounded-full flex items-center justify-center mr-4 overflow-hidden">
-              <Image
-                src="/assets/user.svg"
-                alt="Patient"
-                width={24}
-                height={24}
-                className="w-6 h-6 object-contain"
-              />
+          {/* Existing Patient Card with Dropdown */}
+          {selectedPatient && (
+            <div className="relative">
+              <div className="w-full h-[76px] bg-white rounded-[10px] shadow-[0px_1px_4px_#00000040] flex items-center px-5 relative">
+                <div className="w-10 h-10 bg-[#18d4c6] rounded-full flex items-center justify-center mr-4 overflow-hidden">
+                  <Image
+                    src="/assets/user.svg"
+                    alt="Patient"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain"
+                  />
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowDropdown(!showDropdown)
+                  }}
+                  className="flex-1 flex items-center justify-between hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex flex-col items-start">
+                    <div className="flex items-center gap-1">
+                      <span className="text-lg font-bold text-[#353535]">
+                        {selectedPatient.name}님{selectedPatient.relationship ? `(${selectedPatient.relationship})` : ''}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-[#353535] transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
+                    </div>
+                    {selectedPatient.care_address && (
+                      <span className="text-xs font-medium text-[#646464]">
+                        {selectedPatient.care_address.substring(0, 20)}...
+                      </span>
+                    )}
+                  </div>
+                </button>
+                <button className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                  <Settings className="w-5 h-5 text-[#c8c8c8]" />
+                </button>
+              </div>
+
+              {/* Dropdown List */}
+              {showDropdown && patients.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[10px] shadow-lg border border-[#f0f0f0] z-50">
+                  <div className="py-2">
+                    {patients.map((patient, index) => (
+                      <div
+                        key={patient.patient_id}
+                        className={`w-full px-5 py-3 flex items-center justify-between hover:bg-[#F9F9F9] transition-colors duration-150 ${
+                          index !== patients.length - 1 ? 'border-b border-[#f0f0f0]' : ''
+                        } ${selectedPatient?.patient_id === patient.patient_id ? 'bg-[#F9F9F9]' : ''}`}
+                      >
+                        <button
+                          onClick={() => handleSelectPatient(patient)}
+                          className="flex-1 flex items-center justify-between text-left"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-[#353535]">{patient.name}님</span>
+                            <span className="text-xs text-[#828282]">{patient.care_address?.substring(0, 20)}...</span>
+                          </div>
+                          {selectedPatient?.patient_id === patient.patient_id && (
+                            <div className="w-2 h-2 bg-[#18d4c6] rounded-full"></div>
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(patient, e)}
+                          className="ml-3 p-2 hover:bg-red-50 rounded-full transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col items-start">
-              <span className="text-lg font-bold text-[#353535]">김철수님(부)</span>
-              <span className="text-xs font-medium text-[#646464]">서울시 서초구 반포..</span>
-            </div>
-            <button className="absolute right-5 p-2 hover:bg-gray-50 rounded-full transition-colors">
-              <Settings className="w-5 h-5 text-[#c8c8c8]" />
-            </button>
-          </div>
+          )}
 
           {/* New Patient Card */}
           <button className="w-full h-[76px] bg-white rounded-[10px] shadow-[0px_1px_4px_#00000040] flex items-center px-6 hover:bg-gray-50 transition-colors">
@@ -220,6 +364,36 @@ export default function MyPageDashboard() {
           </button>
         </div>
       </div>
+
+      {/* 삭제 확인 팝업 */}
+      {showDeleteConfirm && patientToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 px-6 pointer-events-none">
+          <div className="bg-white rounded-[20px] p-6 max-w-sm w-full shadow-2xl border-2 border-gray-200 pointer-events-auto">
+            <h3 className="text-lg font-bold text-[#353535] mb-2">환자 삭제 확인</h3>
+            <p className="text-sm text-[#646464] mb-6">
+              <span className="font-semibold text-[#353535]">{patientToDelete.name}님</span>을(를) 정말 삭제하시겠습니까?
+              <br />
+              <span className="text-xs text-[#828282] mt-2 block">
+                삭제된 환자는 목록에서 사라지지만, 매칭 기록은 보존됩니다.
+              </span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelDelete}
+                className="flex-1 py-3 bg-gray-100 text-[#646464] rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

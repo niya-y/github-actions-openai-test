@@ -48,8 +48,7 @@ async def get_my_dashboard(
         name=current_user.name,
         email=current_user.email,
         phone=current_user.phone_number,
-        user_type=current_user.user_type.value,  # Enum을 문자열로 변환
-        gender=current_user.gender.value if current_user.gender else None
+        user_type=current_user.user_type.value  # Enum을 문자열로 변환
     )
     
     guardian_info: Optional[DashboardGuardianInfo] = None
@@ -87,15 +86,18 @@ async def get_my_dashboard(
             
             # 4. 활성 매칭 정보 (첫 번째 환자의 매칭만 고려)
             if patients:
-                # MatchingResult와 Caregiver, User를 조인하여 간병인 정보 가져오기
+                # MatchingResult와 MatchingRequest, Caregiver, User를 조인하여 간병인 정보 가져오기
                 from app.models.profile import Caregiver
-                
+                from app.models.matching import MatchingRequest
+
                 matching = db.query(MatchingResult).join(
+                    MatchingRequest, MatchingResult.request_id == MatchingRequest.request_id
+                ).join(
                     Caregiver, MatchingResult.caregiver_id == Caregiver.caregiver_id
                 ).join(
                     User, Caregiver.user_id == User.user_id
                 ).filter(
-                    MatchingResult.patient_id == patients[0].patient_id,
+                    MatchingRequest.patient_id == patients[0].patient_id,
                     MatchingResult.status == 'active'
                 ).first()
                 
@@ -112,7 +114,7 @@ async def get_my_dashboard(
                         
                         active_matching_info = DashboardActiveMatching(
                             caregiver_name=caregiver_user.name if caregiver_user else "간병인",
-                            match_score=float(matching.match_score) if matching.match_score else 0.0,
+                            match_score=float(matching.total_score) if matching.total_score else 0.0,
                             start_date=matching.created_at.date().isoformat()
                         )
     

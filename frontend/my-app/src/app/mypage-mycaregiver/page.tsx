@@ -407,7 +407,7 @@ export default function MyMatchingConfirmedPage() {
             </button>
             <button
               style={{...styles.actionBtn, ...styles.actionBtnSecondary}}
-              onClick={() => router.push('/mypage')}
+              onClick={() => router.push('/mypage-message')}
             >
               <span>💬</span>
               간병인과 채팅하기
