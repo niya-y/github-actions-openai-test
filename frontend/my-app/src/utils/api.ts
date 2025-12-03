@@ -249,3 +249,41 @@ export async function apiDelete<T>(url: string): Promise<T> {
         throw error;
     }
 }
+
+/**
+ * Retry-enabled API functions with exponential backoff
+ * 재시도 기능이 포함된 API 함수들 (Exponential backoff)
+ */
+
+import { withRetry, RetryOptions } from './retry';
+
+export async function apiGetWithRetry<T>(
+    url: string,
+    retryOptions?: RetryOptions
+): Promise<T> {
+    return withRetry(() => apiGet<T>(url), retryOptions);
+}
+
+export async function apiPostWithRetry<T>(
+    url: string,
+    body: any,
+    options?: { includeAuth?: boolean; headers?: Record<string, string> },
+    retryOptions?: RetryOptions
+): Promise<T> {
+    return withRetry(() => apiPost<T>(url, body, options), retryOptions);
+}
+
+export async function apiPutWithRetry<T>(
+    url: string,
+    body: any,
+    retryOptions?: RetryOptions
+): Promise<T> {
+    return withRetry(() => apiPut<T>(url, body), retryOptions);
+}
+
+export async function apiDeleteWithRetry<T>(
+    url: string,
+    retryOptions?: RetryOptions
+): Promise<T> {
+    return withRetry(() => apiDelete<T>(url), retryOptions);
+}
