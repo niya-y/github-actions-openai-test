@@ -714,6 +714,7 @@ async def get_patient_care_plans(
 async def get_patient_schedules(
     patient_id: int,
     date: str = None,  # YYYY-MM-DD 형식, 없으면 오늘
+    status: str = None,  # 스케줄 상태 필터 (pending_review, confirmed 등)
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -721,6 +722,7 @@ async def get_patient_schedules(
     환자의 특정 날짜 스케줄 및 케어 로그 조회
 
     - date: YYYY-MM-DD 형식 (없으면 오늘 날짜)
+    - status: 스케줄 상태 필터 (선택사항)
     - 해당 날짜의 모든 스케줄과 케어 로그 반환
     """
     from app.models.care_execution import Schedule, CareLog
@@ -735,7 +737,7 @@ async def get_patient_schedules(
     else:
         target_date = date_type.today()
 
-    print(f"🔍 [DEBUG] 스케줄 조회: patient_id={patient_id}, date={target_date}")
+    print(f"🔍 [DEBUG] 스케줄 조회: patient_id={patient_id}, date={target_date}, status={status}")
 
     # 환자 소유권 확인
     guardian = db.query(Guardian).filter(
@@ -754,18 +756,28 @@ async def get_patient_schedules(
     if not patient:
         raise HTTPException(status_code=404, detail="환자 정보를 찾을 수 없습니다")
 
-    # 해당 날짜의 스케줄 조회
-    schedules = db.query(Schedule).filter(
+    # 해당 날짜의 스케줄 조회 (status 필터 적용)
+    query = db.query(Schedule).filter(
         Schedule.patient_id == patient_id,
         Schedule.care_date == target_date
-    ).order_by(Schedule.schedule_id).all()
+    )
+
+    if status:
+        query = query.filter(Schedule.status == status)
+
+    schedules = query.order_by(Schedule.schedule_id).all()
+
+    print(f"🔍 [DEBUG] 조회된 스케줄 수: {len(schedules)}")
 
     # 스케줄별 케어 로그 조회
     result = []
     for schedule in schedules:
+        print(f"🔍 [DEBUG] 스케줄 ID: {schedule.schedule_id}, status: {schedule.status}")
         care_logs = db.query(CareLog).filter(
             CareLog.schedule_id == schedule.schedule_id
         ).order_by(CareLog.scheduled_time).all()
+
+        print(f"🔍 [DEBUG] 스케줄 {schedule.schedule_id}의 케어 로그 수: {len(care_logs)}")
 
         for log in care_logs:
             result.append({
@@ -777,8 +789,7 @@ async def get_patient_schedules(
                 "scheduled_time": log.scheduled_time.strftime("%H:%M") if log.scheduled_time else None,
                 "is_completed": log.is_completed,
                 "completed_at": log.completed_at.isoformat() if log.completed_at else None,
-                "note": log.note or "",
-                "photo_url": log.photo_url or ""
+                "note": log.note or ""
             })
 
     print(f"✅ [DEBUG] 조회된 케어 로그 수: {len(result)}")
