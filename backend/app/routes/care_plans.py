@@ -3,7 +3,7 @@
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -15,6 +15,12 @@ from app.models.care_execution import Schedule, CareLog, CareCategoryEnum
 from app.services.care_plan_generation_service import CarePlanGenerationService
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_age(birth_date: date) -> int:
+    """생년월일로부터 나이 계산"""
+    today = date.today()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
 # Router 생성
 router = APIRouter(prefix="/api/care-plans", tags=["care_plans"])
@@ -96,11 +102,14 @@ async def generate_care_plan(
         ).first()
 
         # 환자 정보 구성
+        # 나이 계산 (birth_date에서)
+        age = calculate_age(patient.birth_date) if patient.birth_date else 65
+
         patient_info = {
             "id": patient.patient_id,
             "name": patient_user.name if patient_user else "환자",
-            "age": patient.age,
-            "condition": patient.care_level or "일반",
+            "age": age,
+            "condition": patient.care_level.value if patient.care_level else "일반",
             "special_conditions": patient.medical_conditions or ""
         }
 
