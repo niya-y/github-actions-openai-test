@@ -16,10 +16,17 @@ export default function CaregiverFinder() {
   const [gender, setGender] = useState<'Male' | 'Female' | 'any'>('any')
   const [experience, setExperience] = useState('5plus')
   const [skills, setSkills] = useState<string[]>(['dementia', 'diabetes'])
-  const [careStartDate, setCareStartDate] = useState<string>('')
-  const [careEndDate, setCareEndDate] = useState<string>('')
+  const [careStartDate, setCareStartDate] = useState('')
+  const [careEndDate, setCareEndDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+
+  // 내일 날짜를 YYYY-MM-DD 형식으로 반환
+  const getTomorrowDateString = () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toISOString().split('T')[0]
+  }
 
   const toggleTimeSlot = (slot: string) => {
     setTimeSlots(prev =>
@@ -33,22 +40,17 @@ export default function CaregiverFinder() {
     )
   }
 
-  const handleCareStartDateChange = (newDate: string) => {
-    setCareStartDate(newDate)
+  const handleCareStartDateChange = (value: string) => {
+    setCareStartDate(value)
     // 시작일을 선택하면 모든 요일 자동 선택
-    if (newDate) {
+    if (value) {
       const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
       setPreferredDays(allDays)
     }
   }
 
-  const handleCareEndDateChange = (newDate: string) => {
-    setCareEndDate(newDate)
-    // 종료일을 선택하면 모든 요일 자동 선택 (이미 선택되어 있을 수 있음)
-    if (newDate && careStartDate) {
-      const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-      setPreferredDays(allDays)
-    }
+  const handleCareEndDateChange = (value: string) => {
+    setCareEndDate(value)
   }
 
   const handleSubmit = async () => {
@@ -257,6 +259,7 @@ export default function CaregiverFinder() {
               <input
                 type="date"
                 value={careStartDate}
+                min={getTomorrowDateString()}
                 onChange={(e) => handleCareStartDateChange(e.target.value)}
                 className="w-full h-10 px-3 rounded-[10px] border border-[#828282] text-sm focus:outline-none focus:border-[#18d4c6]"
               />
@@ -266,12 +269,12 @@ export default function CaregiverFinder() {
               <input
                 type="date"
                 value={careEndDate}
+                min={careStartDate || getTomorrowDateString()}
                 onChange={(e) => handleCareEndDateChange(e.target.value)}
                 className="w-full h-10 px-3 rounded-[10px] border border-[#828282] text-sm focus:outline-none focus:border-[#18d4c6]"
               />
             </div>
           </div>
-          <p className="text-xs text-[#828282]">간병 기간을 설정하면 이 기간에 이용 가능한 간병인을 찾습니다. (선택사항)</p>
         </div>
 
         {/* Time Selection */}
