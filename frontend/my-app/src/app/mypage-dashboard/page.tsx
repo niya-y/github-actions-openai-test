@@ -36,21 +36,38 @@ export default function MyPageDashboard() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        console.log("사용자 정보 조회 시작...")
-        const response = await apiGet<any>("/api/users/me/dashboard")
-        console.log("API 응답:", response)
+        // 디버깅용: 환경변수와 토큰 확인
+        console.log("=== API 호출 시작 ===")
+        console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL || "설정되지 않음 (기본값: http://localhost:8000)")
+        const token = localStorage.getItem('access_token')
+        console.log("access_token 보유:", token ? "있음" : "없음")
 
-        if (response && response.user && response.user.name) {
-          console.log("사용자 이름 설정:", response.user.name)
-          setUserName(response.user.name)
-        } else {
-          console.warn("응답에 user.name이 없습니다:", response)
-          setUserName("사용자")
-        }
+        // 임시: API 호출 대신 테스트 데이터 사용
+        // TODO: API 호출이 안정화되면 다시 활성화
+        setTimeout(() => {
+          // 테스트용 하드코딩된 값
+          setUserName("김철수")
+          setLoading(false)
+        }, 100)
+
+        // const response = await apiGet<any>("/api/users/me/dashboard")
+        // console.log("=== API 응답 성공 ===")
+        // console.log("응답 데이터:", response)
+
+        // if (response && response.user && response.user.name) {
+        //   console.log("✅ 사용자 이름 설정:", response.user.name)
+        //   setUserName(response.user.name)
+        // } else {
+        //   console.warn("⚠️ 응답에 user.name이 없습니다:", response)
+        //   setUserName("사용자")
+        // }
       } catch (error) {
-        console.error("사용자 정보 조회 실패:", error)
+        console.error("=== API 호출 실패 ===")
+        console.error("에러:", error)
+        if (error instanceof Error) {
+          console.error("에러 메시지:", error.message)
+        }
         setUserName("사용자")
-      } finally {
         setLoading(false)
       }
     }
