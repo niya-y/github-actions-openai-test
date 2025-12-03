@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { background, firstPrimary } from '../colors'
-import { apiGet, apiPost } from '@/utils/api'
+import { apiGet, apiPost, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
 import type { CarePlansResponse, Schedule, MealPlan } from '@/types/api'
 
@@ -36,7 +36,12 @@ export default function Screen9Schedule() {
 
   const fetchCarePlans = async () => {
     const patientId = sessionStorage.getItem('patient_id')
+    console.log('[CarePlans] fetchCarePlans called, patient_id:', patientId)
+
     if (!patientId) {
+      console.log('[CarePlans] No patient_id found in sessionStorage')
+      setError(new Error('환자 정보를 찾을 수 없습니다. 다시 로그인해주세요.'))
+      setSchedules([])
       setLoading(false)
       return
     }
@@ -45,16 +50,61 @@ export default function Screen9Schedule() {
     setError(null)
 
     try {
-      const response = await apiGet<CarePlansResponse>(
-        `/api/patients/${patientId}/care-plans?type=weekly`
-      )
+      // pending_review 상태의 스케줄 조회
+      const today = new Date().toISOString().split('T')[0]
+      const apiUrl = `/api/patients/${patientId}/schedules?date=${today}&status=pending_review`
+      console.log('[CarePlans] Fetching from:', apiUrl)
 
-      if (response.schedules && response.schedules.length > 0) {
-        setSchedules(response.schedules)
+      const response = await apiGet<any>(apiUrl)
+
+      console.log('[CarePlans] API Response:', response)
+
+      // 응답 구조 검증
+      if (!response) {
+        throw new Error('서버에서 응답을 받지 못했습니다')
       }
+
+      // care_logs 필드 검증
+      if (!response.care_logs || !Array.isArray(response.care_logs)) {
+        console.log('[CarePlans] Invalid care_logs structure, using empty array')
+        setSchedules([])
+        setLoading(false)
+        return
+      }
+
+      if (response.care_logs.length === 0) {
+        console.log('[CarePlans] No care_logs found, schedules will remain empty')
+        setSchedules([])
+        setLoading(false)
+        return
+      }
+
+      // care_logs를 schedules 형식으로 변환 (타입 검증 포함)
+      const convertedSchedules = response.care_logs
+        .filter((log: any) => {
+          // 필수 필드 검증
+          return typeof log.schedule_id === 'number' &&
+                 typeof log.task_name === 'string' &&
+                 typeof log.is_completed === 'boolean'
+        })
+        .map((log: any) => ({
+          schedule_id: log.schedule_id,
+          title: log.task_name,
+          start_time: log.scheduled_time || '00:00',
+          category: log.category || 'other',
+          is_completed: log.is_completed
+        }))
+
+      if (convertedSchedules.length === 0) {
+        throw new Error('유효한 일정 데이터가 없습니다')
+      }
+
+      console.log('[CarePlans] Converted schedules:', convertedSchedules)
+      setSchedules(convertedSchedules)
     } catch (err) {
-      console.error('케어 플랜 조회 실패:', err)
-      // 에러 시에도 기본 데이터 표시
+      console.error('[CarePlans] 케어 플랜 조회 실패:', err)
+      setError(err as Error)
+      setSchedules([])
     } finally {
       setLoading(false)
     }
@@ -91,14 +141,18 @@ export default function Screen9Schedule() {
 
   // 스케줄을 활동 형식으로 변환
   const getActivities = () => {
+    console.log('[CarePlans] getActivities called, schedules.length:', schedules.length)
     if (schedules.length > 0) {
-      return schedules.map(schedule => ({
+      const activities = schedules.map(schedule => ({
         time: schedule.start_time.slice(0, 5), // HH:MM 형식
         title: schedule.title,
         assignee: `👨‍⚕️ ${schedule.category}`,
         note: schedule.is_completed ? '✅ 완료' : undefined
       }))
+      console.log('[CarePlans] Returning DB activities:', activities)
+      return activities
     }
+    console.log('[CarePlans] Returning default hardcoded activities')
     return defaultActivities
   }
 
@@ -207,7 +261,7 @@ export default function Screen9Schedule() {
             onClick={() => setActiveTab('meal')}
           >
             <span className={`text-base font-bold ${activeTab === 'meal' ? 'text-[#353535]' : 'text-[#828282]'}`}>
-              월간
+              추천 식단
             </span>
           </button>
         </div>
@@ -253,7 +307,24 @@ export default function Screen9Schedule() {
                 <span className="text-[#353535] text-lg font-bold mb-3 ml-5">추천 식단</span>
                 <div className="text-[#353535] text-base font-bold mb-[11px] ml-5">{mealPlan.menu_name}</div>
                 {mealPlan.ingredients && (
-                  <div className="text-[#828282] text-xs ml-5 mb-3">재료: {mealPlan.ingredients}</div>
+                  <div className="text-[#828282] text-xs ml-5 mb-3">
+                    <span className="font-bold">재료:</span> {mealPlan.ingredients}
+                  </div>
+                )}
+                {mealPlan.nutrition_info && (
+                  <div className="text-[#828282] text-xs ml-5 mb-3">
+                    <span className="font-bold">영양 정보:</span>{' '}
+                    칼로리 {mealPlan.nutrition_info.calories || 'N/A'}kcal,
+                    단백질 {mealPlan.nutrition_info.protein_g || 'N/A'}g,
+                    탄수화물 {mealPlan.nutrition_info.carbs_g || 'N/A'}g,
+                    지방 {mealPlan.nutrition_info.fat_g || 'N/A'}g
+                  </div>
+                )}
+                {mealPlan.cooking_tips && (
+                  <div className="bg-[#F8F8F8] mx-5 p-3 rounded-lg mb-3">
+                    <div className="text-[#18D4C6] text-sm font-bold mb-2">💡 왜 이 식단이 좋은가요?</div>
+                    <div className="text-[#353535] text-xs whitespace-pre-line">{mealPlan.cooking_tips}</div>
+                  </div>
                 )}
               </>
             ) : (
@@ -279,7 +350,27 @@ export default function Screen9Schedule() {
             </button>
             <button
               className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] rounded-lg border border-solid border-[#18D4C6]"
-              onClick={() => router.push('/care-plans-create-4')}
+              onClick={async () => {
+                try {
+                  const patientId = sessionStorage.getItem('patient_id')
+                  if (!patientId) {
+                    alert('환자 정보를 찾을 수 없습니다.')
+                    return
+                  }
+
+                  // status를 under_review로 업데이트
+                  await apiPut('/api/care-plans/schedules/status', {
+                    patient_id: parseInt(patientId),
+                    status: 'under_review'
+                  })
+
+                  console.log('[CarePlans] Status updated to under_review')
+                  router.push('/care-plans-create-4')
+                } catch (err) {
+                  console.error('[CarePlans] Failed to update status:', err)
+                  alert('상태 업데이트 중 오류가 발생했습니다.')
+                }
+              }}
             >
               <span className="text-white text-base font-bold">요청하기</span>
             </button>
