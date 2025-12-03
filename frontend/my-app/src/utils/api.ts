@@ -28,6 +28,9 @@ export async function apiPost<T>(url: string, body: any, options?: { includeAuth
         }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+
     try {
         const response = await fetch(`${BASE_URL}${url}`, {
             method: 'POST',
@@ -35,7 +38,10 @@ export async function apiPost<T>(url: string, body: any, options?: { includeAuth
             body: isFormData ? body : JSON.stringify(body),
             credentials: 'include',
             mode: 'cors',
+            signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -52,8 +58,20 @@ export async function apiPost<T>(url: string, body: any, options?: { includeAuth
             throw new Error(`API call failed: ${response.status} ${response.statusText}`);
         }
 
-        return response.json();
+        try {
+            return await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse JSON response:', parseError);
+            throw new Error('Invalid JSON response from server');
+        }
     } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.error('API request timeout (30s):', url);
+            throw new Error('요청 타임아웃 (30초) - 네트워크 연결을 확인해주세요');
+        }
+
         console.error('API request failed:', error);
         throw error;
     }
@@ -70,13 +88,19 @@ export async function apiGet<T>(url: string): Promise<T> {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+
     try {
         const response = await fetch(`${BASE_URL}${url}`, {
             method: 'GET',
             headers,
             credentials: 'include',
             mode: 'cors',
+            signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -93,8 +117,20 @@ export async function apiGet<T>(url: string): Promise<T> {
             throw new Error(`API call failed: ${response.status} ${response.statusText}`);
         }
 
-        return response.json();
+        try {
+            return await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse JSON response:', parseError);
+            throw new Error('Invalid JSON response from server');
+        }
     } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.error('API request timeout (30s):', url);
+            throw new Error('요청 타임아웃 (30초) - 네트워크 연결을 확인해주세요');
+        }
+
         console.error('API request failed:', error);
         throw error;
     }
@@ -111,29 +147,52 @@ export async function apiPut<T>(url: string, body: any): Promise<T> {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(body),
-        credentials: 'include',
-        mode: 'cors',
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+    try {
+        const response = await fetch(`${BASE_URL}${url}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(body),
+            credentials: 'include',
+            mode: 'cors',
+            signal: controller.signal,
+        });
 
-        // 401 Unauthorized - 토큰 만료, 로그인 페이지로 리다이렉트
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-            return Promise.reject(new Error('Session expired. Please login again.'));
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+
+            // 401 Unauthorized - 토큰 만료, 로그인 페이지로 리다이렉트
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return Promise.reject(new Error('Session expired. Please login again.'));
+            }
+
+            throw new Error(`API call failed: ${response.status} ${response.statusText}`);
         }
 
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
-    }
+        try {
+            return await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse JSON response:', parseError);
+            throw new Error('Invalid JSON response from server');
+        }
+    } catch (error) {
+        clearTimeout(timeoutId);
 
-    return response.json();
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.error('API request timeout (30s):', url);
+            throw new Error('요청 타임아웃 (30초) - 네트워크 연결을 확인해주세요');
+        }
+
+        console.error('API request failed:', error);
+        throw error;
+    }
 }
 
 export async function apiDelete<T>(url: string): Promise<T> {
@@ -144,26 +203,49 @@ export async function apiDelete<T>(url: string): Promise<T> {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include',
-        mode: 'cors',
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+    try {
+        const response = await fetch(`${BASE_URL}${url}`, {
+            method: 'DELETE',
+            headers,
+            credentials: 'include',
+            mode: 'cors',
+            signal: controller.signal,
+        });
 
-        // 401 Unauthorized - 토큰 만료
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-            return Promise.reject(new Error('Session expired. Please login again.'));
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`API Error - Status: ${response.status}, Body:`, errorBody);
+
+            // 401 Unauthorized - 토큰 만료
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return Promise.reject(new Error('Session expired. Please login again.'));
+            }
+
+            throw new Error(`API call failed: ${response.status} ${response.statusText}`);
         }
 
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
-    }
+        try {
+            return await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse JSON response:', parseError);
+            throw new Error('Invalid JSON response from server');
+        }
+    } catch (error) {
+        clearTimeout(timeoutId);
 
-    return response.json();
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.error('API request timeout (30s):', url);
+            throw new Error('요청 타임아웃 (30초) - 네트워크 연결을 확인해주세요');
+        }
+
+        console.error('API request failed:', error);
+        throw error;
+    }
 }
