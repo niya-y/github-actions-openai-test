@@ -224,10 +224,41 @@ export interface DietaryConstraintsResponse {
   all_recommend_foods: string[];
 }
 
+// 케어 로그 (스케줄의 세부 활동)
+export interface CareLog {
+  log_id?: number;
+  schedule_id: number;
+  task_name: string;
+  category: string;
+  scheduled_time: string | null;
+  is_completed: boolean;
+  completed_at?: string | null;
+  note?: string;
+}
+
+// 스케줄 응답 (환자의 특정 날짜 스케줄 조회)
+export interface ScheduleResponse {
+  patient_id: number;
+  date: string;
+  care_logs: CareLog[];
+  status?: string;
+  total_count?: number;
+}
+
 export interface CarePlansResponse {
   type: 'weekly' | 'monthly';
   schedules: Schedule[];
   meal_plans: MealPlan[];
+}
+
+// 기본 API 응답 래퍼
+export interface ApiResponse<T = any> {
+  success?: boolean;
+  status?: 'success' | 'error';
+  data?: T;
+  message?: string;
+  error?: string;
+  timestamp?: string;
 }
 
 // ==================== 마이페이지 ====================
