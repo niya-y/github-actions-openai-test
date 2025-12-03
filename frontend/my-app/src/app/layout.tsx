@@ -5,6 +5,7 @@ import { cn } from "@/utils/cn";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { AppProvider } from "@/context/AppContext";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
@@ -31,10 +32,12 @@ export default function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <div className="w-full max-w-[430px] min-h-screen bg-background relative shadow-2xl flex flex-col">
-          <main className="flex-1 pb-16">{children}</main>
-          <BottomNav />
-        </div>
+        <AppProvider>
+          <div className="w-full max-w-[430px] min-h-screen bg-background relative shadow-2xl flex flex-col">
+            <main className="flex-1 pb-16">{children}</main>
+            <BottomNav />
+          </div>
+        </AppProvider>
       </body>
     </html>
   );
