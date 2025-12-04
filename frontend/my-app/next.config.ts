@@ -57,7 +57,6 @@ const nextConfig: NextConfig = {
           },
         },
       },
-      turbopack: {},
     };
 
     return config;
