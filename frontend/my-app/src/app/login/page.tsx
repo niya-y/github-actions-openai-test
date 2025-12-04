@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { apiPost } from "@/utils/api"
+import { apiPost, apiGet } from "@/utils/api"
 import ErrorAlert from "@/components/ErrorAlert"
 
 export default function LoginPage() {
@@ -24,6 +24,22 @@ export default function LoginPage() {
             console.log('[Login] Authenticated user → Redirecting to /home')
         }
     }, [router])
+
+    const handleKakaoLogin = async () => {
+        setLoading(true)
+        setError(null)
+
+        try {
+            // 백엔드에서 카카오 로그인 URL 가져오기
+            const response = await apiGet<{ url: string }>("/auth/kakao/login")
+            // 카카오 로그인 페이지로 리다이렉트
+            window.location.href = response.url
+        } catch (err) {
+            console.error("카카오 로그인 URL 요청 실패:", err)
+            setError(err as Error)
+            setLoading(false)
+        }
+    }
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -175,16 +191,16 @@ export default function LoginPage() {
 
             {/* Login Buttons */}
             <div className="w-full max-w-sm">
-                <Link href="/onboarding" className="w-full block">
-                    <Button
-                        className="w-full h-14 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#000000] font-semibold rounded-xl flex items-center justify-center gap-3 shadow-lg"
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 3C6.48 3 2 6.58 2 11C2 13.5 3.5 15.72 5.84 17.12L4.5 21.5L9.5 18.92C10.28 19.08 11.13 19.17 12 19.17C17.52 19.17 22 15.59 22 11.17C22 6.58 17.52 3 12 3Z" fill="currentColor" />
-                        </svg>
-                        카카오톡으로 시작하기
-                    </Button>
-                </Link>
+                <Button
+                    onClick={handleKakaoLogin}
+                    disabled={loading}
+                    className="w-full h-14 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#000000] font-semibold rounded-xl flex items-center justify-center gap-3 shadow-lg disabled:opacity-50"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3C6.48 3 2 6.58 2 11C2 13.5 3.5 15.72 5.84 17.12L4.5 21.5L9.5 18.92C10.28 19.08 11.13 19.17 12 19.17C17.52 19.17 22 15.59 22 11.17C22 6.58 17.52 3 12 3Z" fill="currentColor" />
+                    </svg>
+                    {loading ? "로그인 중..." : "카카오톡으로 시작하기"}
+                </Button>
 
                 <Button
                     onClick={() => setIsEmailLogin(true)}
