@@ -17,9 +17,9 @@ export default function Screen11AIValidation() {
   const [decisions, setDecisions] = useState<{
     [key: string]: string
   }>({
-    'accept-0': undefined,
-    'partial-0': undefined,
-    'reject-0': undefined
+    'accept-0': '',
+    'partial-0': '',
+    'reject-0': ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
