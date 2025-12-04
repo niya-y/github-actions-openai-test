@@ -1,0 +1,33 @@
+name: Deploy Backend to Azure
+on:
+  push:
+    branches: [backend-deploy, main]
+  workflow_dispatch:
+env:
+  AZURE_WEBAPP_NAME: nuelbomcare-api
+  PYTHON_VERSION: '3.12'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+name: Set up Python
+uses: actions/setup-python@v5
+with:
+  python-version: ${{ env.PYTHON_VERSION }}
+
+# ZIP 압축만 (가상환경 제외)
+
+name: Create package
+run: |
+  cd backend
+  zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "venv/*" -x "antenv/*"
+
+name: Deploy to Azure
+uses: azure/webapps-deploy@v3
+with:
+  app-name: ${{ env.AZURE_WEBAPP_NAME }}
+  publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+  package: app.zip
