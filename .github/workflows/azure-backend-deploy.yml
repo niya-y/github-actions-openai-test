@@ -22,22 +22,15 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       
-      - name: Create virtual environment and install dependencies
-        run: |
-          cd backend
-          python -m venv antenv
-          source antenv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-      
       - name: Create deployment package
         run: |
           cd backend
-          zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env"
+          zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "venv/*" -x "antenv/*" -x ".venv/*"
       
-      - name: Deploy to Azure
+      - name: Deploy to Azure with build
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: app.zip
+          type: zip
