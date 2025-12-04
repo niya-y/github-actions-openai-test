@@ -28,6 +28,8 @@ export default function SchedulePage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
     const [careLogs, setCareLogs] = useState<CareLog[]>([])
     const [loading, setLoading] = useState(false)
+    const [isCalendarExpanded, setIsCalendarExpanded] = useState(false)
+    const [scheduleDates, setScheduleDates] = useState<Set<string>>(new Set())
 
     // 환자 목록 불러오기
     useEffect(() => {
@@ -48,7 +50,7 @@ export default function SchedulePage() {
                     const savedPatientId = sessionStorage.getItem('selected_patient_id')
                     if (savedPatientId) {
                         const selected = response.patients.find(
-                            (p: Patient) => p.patient_id === parseInt(savedPatientId)
+                            (p: any) => p.patient_id === parseInt(savedPatientId)
                         )
                         if (selected) {
                             setSelectedPatient(selected)
@@ -121,6 +123,16 @@ export default function SchedulePage() {
                 lastUpdated: new Date().toISOString()
             })
             setCareLogs(response.care_logs)
+
+            // 스케줄 날짜 추출하여 달력에 표시
+            const dates = new Set<string>()
+            response.care_logs.forEach((log: CareLog) => {
+                if (log.scheduled_time) {
+                    const date = log.scheduled_time.split('T')[0] // YYYY-MM-DD 형식
+                    dates.add(date)
+                }
+            })
+            setScheduleDates(dates)
         } catch (err) {
             console.error('[Schedule] Error fetching schedules:', err)
             setCareLogs([])
@@ -161,7 +173,15 @@ export default function SchedulePage() {
             days.push({ day: i, isCurrentMonth: true })
         }
 
-        return days.slice(0, 7) // 첫 주만 표시
+        // Next month's days to fill the last row
+        const remainingDays = 7 - (days.length % 7)
+        if (remainingDays < 7) {
+            for (let i = 1; i <= remainingDays; i++) {
+                days.push({ day: i, isCurrentMonth: false })
+            }
+        }
+
+        return isCalendarExpanded ? days : days.slice(0, 7) // 확장 시 전체 표시, 축소 시 첫 주만
     }
 
     const calendarDays = generateCalendarDays()
@@ -264,10 +284,23 @@ export default function SchedulePage() {
                     <div className="grid grid-cols-7 gap-1 text-center">
                         {calendarDays.map((dayObj, i) => {
                             const isTodayDate = dayObj.isCurrentMonth && isToday(dayObj.day)
-                            const hasSchedule = dayObj.isCurrentMonth && (dayObj.day === 5 || dayObj.day === 6)
+                            // 실제 스케줄 데이터 기반으로 일정 표시
+                            const dateStr = dayObj.isCurrentMonth
+                                ? `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(dayObj.day).padStart(2, '0')}`
+                                : ''
+                            const hasSchedule = scheduleDates.has(dateStr)
 
                             return (
-                                <div key={i} className="flex flex-col items-center gap-1 py-1">
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        if (dayObj.isCurrentMonth && selectedPatient) {
+                                            const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayObj.day)
+                                            setSelectedDate(newDate)
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 py-1 hover:bg-gray-50 rounded transition-colors"
+                                >
                                     <span className={cn(
                                         "text-sm font-medium",
                                         isTodayDate ? "text-gray-900 font-bold" : "text-gray-500",
@@ -278,15 +311,19 @@ export default function SchedulePage() {
                                     {hasSchedule && (
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#18d4c6]" />
                                     )}
-                                </div>
+                                </button>
                             )
                         })}
                     </div>
 
-                    {/* Drag handle */}
-                    <div className="flex justify-center mt-2">
+                    {/* Drag handle - 클릭하면 달력 확장/축소 */}
+                    <button
+                        onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
+                        className="flex justify-center mt-2 w-full py-2 hover:bg-gray-50 rounded transition-colors"
+                        aria-label={isCalendarExpanded ? "달력 축소" : "달력 확장"}
+                    >
                         <div className="w-10 h-1 bg-gray-200 rounded-full" />
-                    </div>
+                    </button>
                 </div>
 
                 {/* Daily Plan Title */}
@@ -297,8 +334,8 @@ export default function SchedulePage() {
                     <h2 className="text-xl font-bold text-gray-900">오늘의 돌봄 계획</h2>
                 </div>
 
-                {/* Task List */}
-                <div className="space-y-4">
+                {/* Task List - 스크롤 가능하도록 최대 높이 설정 */}
+                <div className="space-y-4 max-h-[calc(100vh-500px)] overflow-y-auto">
                     {loading ? (
                         <div className="text-center py-8 text-gray-400">로딩 중...</div>
                     ) : careLogs.length === 0 ? (

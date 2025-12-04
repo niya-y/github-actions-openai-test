@@ -174,8 +174,8 @@ export default function LoginPage() {
             </div>
 
             {/* Login Buttons */}
-            <div className="w-full max-w-sm space-y-3">
-                <Link href="/onboarding" className="w-full">
+            <div className="w-full max-w-sm">
+                <Link href="/onboarding" className="w-full block">
                     <Button
                         className="w-full h-14 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#000000] font-semibold rounded-xl flex items-center justify-center gap-3 shadow-lg"
                     >
@@ -188,7 +188,7 @@ export default function LoginPage() {
 
                 <Button
                     onClick={() => setIsEmailLogin(true)}
-                    className="w-full h-14 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl flex items-center justify-center gap-3"
+                    className="w-full h-14 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl flex items-center justify-center gap-3 mt-4 shadow-lg"
                 >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />

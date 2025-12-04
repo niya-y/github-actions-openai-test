@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { background, firstPrimary, secondPrimary } from '@/app/colors'
+import { ChevronLeft, Bell, MessageCircle, Calendar, Star } from 'lucide-react'
+import ErrorAlert from '@/components/ErrorAlert'
 
 interface Caregiver {
   caregiver_id?: number
@@ -26,19 +27,29 @@ interface Caregiver {
   profile_image_url?: string
 }
 
-export default function MyMatchingConfirmedPage() {
+export default function MypageMyCaregiverPage() {
   const router = useRouter()
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null)
   const [showBanner, setShowBanner] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    // Retrieve selected caregiver from session storage
+    // sessionStorage에서 선택된 간병인 정보 가져오기
     const stored = sessionStorage.getItem('selectedCaregiver')
     if (stored) {
-      setCaregiver(JSON.parse(stored))
+      try {
+        const parsed = JSON.parse(stored)
+        console.log('[MyCaregiver] Loaded caregiver:', parsed)
+        setCaregiver(parsed)
+      } catch (err) {
+        console.error('[MyCaregiver] Error parsing caregiver data:', err)
+        setError(err as Error)
+      }
+    } else {
+      console.log('[MyCaregiver] No caregiver data found in sessionStorage')
     }
 
-    // Auto-hide banner after 5 seconds
+    // 배너 자동 숨김 (5초 후)
     const timer = setTimeout(() => {
       setShowBanner(false)
     }, 5000)
@@ -46,385 +57,199 @@ export default function MyMatchingConfirmedPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const styles = {
-    container: {
-      minHeight: 'calc(100vh - 64px - 80px)',
-      background: background,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      paddingBottom: '100px'
-    },
-    navBar: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '15px 20px',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    backBtn: {
-      fontSize: '20px',
-      cursor: 'pointer',
-      color: firstPrimary,
-      background: 'none',
-      border: 'none'
-    },
-    navTitle: {
-      flex: 1,
-      textAlign: 'center' as const,
-      fontWeight: 600,
-      fontSize: '17px'
-    },
-    content: {
-      flex: 1,
-      overflowY: 'auto' as const,
-      padding: '20px'
-    },
-    matchedBanner: {
-      position: 'fixed' as const,
-      top: '64px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: 'calc(100% - 20px)',
-      maxWidth: '320px',
-      background: '#d1fae5',
-      border: `1px solid #10b981`,
-      borderRadius: '8px',
-      padding: '12px 15px',
-      textAlign: 'center' as const,
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '10px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      margin: '8px auto 0',
-      animation: 'slideDown 0.5s ease-out forwards'
-    },
-    bannerCloseBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '18px',
-      cursor: 'pointer',
-      color: '#065f46',
-      padding: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    },
-    bannerContent: {
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: '4px'
-    },
-    matchedIcon: {
-      fontSize: '28px'
-    },
-    matchedTitle: {
-      fontSize: '14px',
-      fontWeight: 700,
-      color: '#065f46'
-    },
-    matchedDesc: {
-      fontSize: '12px',
-      color: '#047857'
-    },
-    caregiverCard: {
-      background: 'white',
-      borderRadius: '15px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      marginBottom: '20px'
-    },
-    caregiverHeader: {
-      display: 'flex',
-      gap: '15px',
-      marginBottom: '15px',
-      paddingBottom: '15px',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    caregiverAvatar: {
-      width: '80px',
-      height: '80px',
-      borderRadius: '40px',
-      background: '#f0f4ff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '40px',
-      flexShrink: 0
-    },
-    caregiverInfo: {
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      justifyContent: 'center'
-    },
-    caregiverName: {
-      fontSize: '20px',
-      fontWeight: 700,
-      color: '#333',
-      marginBottom: '4px'
-    },
-    caregiverMeta: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      marginBottom: '8px',
-      fontSize: '14px'
-    },
-    rating: {
-      color: secondPrimary,
-      fontWeight: 600
-    },
-    certBadge: {
-      display: 'inline-block',
-      padding: '4px 10px',
-      background: '#dbeafe',
-      color: '#1e40af',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: 600
-    },
-    experienceText: {
-      fontSize: '13px',
-      color: '#666'
-    },
-    caregiverBody: {
-      marginBottom: '15px'
-    },
-    intro: {
-      fontSize: '14px',
-      color: '#555',
-      lineHeight: 1.6,
-      marginBottom: '12px',
-      fontStyle: 'italic'
-    },
-    specialties: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
-      gap: '8px'
-    },
-    specialtyTag: {
-      padding: '6px 12px',
-      background: '#f0f4ff',
-      color: firstPrimary,
-      borderRadius: '12px',
-      fontSize: '12px'
-    },
-    matchScore: {
-      background: '#fce7f3',
-      border: `1px solid ${secondPrimary}`,
-      padding: '15px',
-      borderRadius: '10px',
-      textAlign: 'center' as const,
-      marginTop: '15px'
-    },
-    matchScoreValue: {
-      fontSize: '28px',
-      fontWeight: 700,
-      color: secondPrimary,
-      marginBottom: '4px'
-    },
-    matchScoreLabel: {
-      fontSize: '13px',
-      color: secondPrimary
-    },
-    rateInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: '#f9fafb',
-      padding: '12px 15px',
-      borderRadius: '10px',
-      marginTop: '12px'
-    },
-    rateLabel: {
-      fontSize: '13px',
-      color: '#666'
-    },
-    rateValue: {
-      fontSize: '16px',
-      fontWeight: 700,
-      color: firstPrimary
-    },
-    actionSection: {
-      marginBottom: '20px'
-    },
-    sectionTitle: {
-      fontSize: '16px',
-      fontWeight: 600,
-      color: '#333',
-      marginBottom: '12px'
-    },
-    actionButtons: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '10px'
-    },
-    actionBtn: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '10px',
-      padding: '15px',
-      borderRadius: '12px',
-      border: 'none',
-      fontSize: '15px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      transition: 'all 0.3s'
-    },
-    actionBtnPrimary: {
-      background: firstPrimary,
-      color: 'white'
-    },
-    actionBtnSecondary: {
-      background: 'white',
-      color: firstPrimary,
-      border: `2px solid ${firstPrimary}`
-    },
-    infoCard: {
-      background: 'white',
-      borderRadius: '12px',
-      padding: '16px',
-      marginTop: '15px',
-      fontSize: '13px',
-      color: '#666',
-      lineHeight: 1.6,
-      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-    },
-    infoCardTitle: {
-      fontWeight: 600,
-      color: '#333',
-      marginBottom: '8px'
-    },
-    infoBullet: {
-      marginBottom: '6px'
-    }
-  }
+  const displayName = caregiver?.caregiver_name || caregiver?.name || '간병인'
+  const displayRating = caregiver?.avg_rating || caregiver?.rating || 0
+  const displayReviews = caregiver?.reviews || 0
+  const displayJobTitle = caregiver?.job_title || caregiver?.certification || '요양보호사'
+  const displayExperience = caregiver?.experience_years
+    ? `경력 ${caregiver.experience_years}년`
+    : caregiver?.experience || '경력 정보 없음'
+  const displaySpecialties = caregiver?.specialties && caregiver.specialties.length > 0
+    ? caregiver.specialties
+    : ['기본 돌봄']
+  const displayRate = caregiver?.hourly_rate || caregiver?.rate || 0
+  const displayIntro = caregiver?.intro || '친절하고 성실한 간병을 제공하겠습니다.'
 
   return (
-    <>
-      <style>
-        {`
-          @keyframes slideDown {
-            from {
-              opacity: 0;
-              transform: translateX(-50%) translateY(-20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(-50%) translateY(0);
-            }
+    <div className="min-h-screen bg-white flex flex-col">
+      <ErrorAlert error={error} onClose={() => setError(null)} />
+
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-4 h-[60px] flex items-center justify-between border-b border-gray-100">
+        <button
+          onClick={() => router.back()}
+          className="p-2 -ml-2 text-[#828282]"
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-bold text-[#353535]">나의 간병인</h1>
+        <button className="p-2 -mr-2 text-[#828282]">
+          <Bell className="w-6 h-6" />
+        </button>
+      </header>
+
+      {/* Success Banner */}
+      {showBanner && (
+        <div className="mx-6 mt-4 mb-2 bg-[#d1fae5] border border-[#10b981] rounded-[10px] px-4 py-3 flex items-center justify-between animate-[slideDown_0.5s_ease-out]">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="text-sm font-bold text-[#065f46]">매칭되었습니다!</p>
+              <p className="text-xs text-[#047857]">간병인과의 관계가 시작되었습니다</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowBanner(false)}
+            className="text-[#065f46] text-xl leading-none p-1"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
           }
-        `}
-      </style>
-      <div style={styles.container}>
-        <div style={styles.navBar}>
-        <button style={styles.backBtn} onClick={() => router.back()}>←</button>
-        <div style={styles.navTitle}>매칭 확인</div>
-        <div style={{width: '20px'}}></div>
-      </div>
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
 
-      <div style={styles.content}>
-        {/* Matched Banner - Toast Notification */}
-        {showBanner && (
-          <div style={styles.matchedBanner}>
-            <div style={styles.bannerContent}>
-              <div style={styles.matchedIcon}>✅</div>
-              <div style={styles.matchedTitle}>매칭되었습니다!</div>
-              <div style={styles.matchedDesc}>간병인과의 관계가 시작되었습니다</div>
-            </div>
+      {/* Main Content */}
+      <main className="flex-1 px-6 pt-6 pb-8 overflow-y-auto">
+        {!caregiver ? (
+          <div className="text-center py-12">
+            <p className="text-[#828282] font-semibold mb-4">간병인 정보를 불러올 수 없습니다.</p>
             <button
-              style={styles.bannerCloseBtn}
-              onClick={() => setShowBanner(false)}
+              onClick={() => router.push('/home')}
+              className="px-6 py-2 bg-[#18d4c6] text-white font-bold rounded-[10px] hover:bg-[#15b0a8] transition-colors"
             >
-              ✕
+              홈으로 가기
             </button>
           </div>
-        )}
-
-        {/* Add padding to content when banner is shown */}
-        <div style={{paddingTop: showBanner ? '140px' : '0'}}></div>
-
-        {/* Caregiver Card */}
-        {caregiver && (
-          <div style={styles.caregiverCard}>
-            <div style={styles.caregiverHeader}>
-              <div style={styles.caregiverAvatar}>{caregiver.avatar || caregiver.profile_image_url || '👨‍⚕️'}</div>
-              <div style={styles.caregiverInfo}>
-                <div style={styles.caregiverName}>{caregiver.name || caregiver.caregiver_name}</div>
-                <div style={styles.caregiverMeta}>
-                  <span style={styles.rating}>⭐ {caregiver.rating || caregiver.avg_rating || 4.5}</span>
-                  <span style={{color: '#999'}}>({caregiver.reviews || 0}건)</span>
-                </div>
-                <span style={styles.certBadge}>{caregiver.certification || caregiver.job_title || '요양보호사'}</span>
-                <div style={styles.experienceText}>{caregiver.experience || `경력 ${caregiver.experience_years || 0}년`}</div>
-              </div>
-            </div>
-
-            <div style={styles.caregiverBody}>
-              <div style={styles.intro}>&ldquo;{caregiver.intro || '친절하고 성실한 간병을 제공하겠습니다.'}&rdquo;</div>
-              <div style={styles.specialties}>
-                {(caregiver.specialties && caregiver.specialties.length > 0) ? (
-                  caregiver.specialties.map((specialty, i) => (
-                    <span key={i} style={styles.specialtyTag}>{specialty}</span>
-                  ))
+        ) : (
+          <>
+            {/* Caregiver Card */}
+            <div className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f0f0f0] mb-6">
+              {/* Profile Section */}
+              <div className="flex gap-4 mb-4 pb-4 border-b border-gray-100">
+                {/* Avatar */}
+                {caregiver.profile_image_url ? (
+                  <img
+                    src={caregiver.profile_image_url}
+                    alt={displayName}
+                    className="w-20 h-20 rounded-full object-cover border border-gray-100 shrink-0"
+                  />
                 ) : (
-                  <span style={styles.specialtyTag}>기본 돌봄</span>
+                  <div className="w-20 h-20 rounded-full bg-[#f0f4ff] flex items-center justify-center shrink-0 text-3xl">
+                    {caregiver.avatar || '👨‍⚕️'}
+                  </div>
                 )}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-[#353535] mb-1">{displayName}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1 text-[#18d4c6]">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span className="text-sm font-bold">{displayRating.toFixed(1)}</span>
+                    </div>
+                    <span className="text-xs text-[#828282]">({displayReviews}건)</span>
+                  </div>
+                  <span className="inline-block px-3 py-1 bg-[#dbeafe] text-[#1e40af] text-xs font-bold rounded-full">
+                    {displayJobTitle}
+                  </span>
+                </div>
+              </div>
+
+              {/* Experience */}
+              <div className="mb-4">
+                <p className="text-sm text-[#828282] font-semibold">{displayExperience}</p>
+              </div>
+
+              {/* Intro */}
+              <div className="mb-4">
+                <p className="text-sm text-[#555] italic leading-relaxed">
+                  &ldquo;{displayIntro}&rdquo;
+                </p>
+              </div>
+
+              {/* Specialties */}
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {displaySpecialties.map((specialty, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-[#e8fffd] text-[#18d4c6] text-xs font-semibold rounded-full border border-[#18d4c6]"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hourly Rate */}
+              <div className="bg-[#f9fafb] rounded-[10px] px-4 py-3 flex items-center justify-between">
+                <span className="text-sm text-[#666] font-semibold">시간당 요금</span>
+                <span className="text-base font-bold text-[#18d4c6]">
+                  {displayRate > 0 ? `₩${displayRate.toLocaleString()}` : '문의'}
+                </span>
               </div>
             </div>
 
-            <div style={styles.matchScore}>
-              <div style={styles.matchScoreValue}>{caregiver.matchScore || caregiver.match_score || 0}%</div>
-              <div style={styles.matchScoreLabel}>매칭 일치도</div>
+            {/* Action Buttons */}
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => router.push('/care-plans-create-1')}
+                className="w-full h-14 bg-[#18d4c6] rounded-[10px] flex items-center justify-center gap-2 shadow-[1px_1px_2px_rgba(125,140,139,0.5)] hover:bg-[#15b0a8] transition-colors"
+              >
+                <Calendar className="w-5 h-5 text-white" />
+                <span className="text-base font-bold text-white">AI 맞춤 케어 일정 만들기</span>
+              </button>
+
+              <button
+                onClick={() => router.push('/mypage-message')}
+                className="w-full h-14 bg-white border-2 border-[#18d4c6] rounded-[10px] flex items-center justify-center gap-2 hover:bg-[#e8fffd] transition-colors"
+              >
+                <MessageCircle className="w-5 h-5 text-[#18d4c6]" />
+                <span className="text-base font-bold text-[#18d4c6]">간병인과 채팅하기</span>
+              </button>
             </div>
 
-            <div style={styles.rateInfo}>
-              <span style={styles.rateLabel}>시간당 요금</span>
-              <span style={styles.rateValue}>
-                {(caregiver.rate || caregiver.hourly_rate || 0) > 0
-                  ? `${(caregiver.rate || caregiver.hourly_rate).toLocaleString()}원`
-                  : '문의'}
-              </span>
+            {/* Info Card */}
+            <div className="bg-white rounded-[20px] p-5 shadow-sm border border-[#f0f0f0]">
+              <h3 className="text-base font-bold text-[#353535] mb-3 flex items-center gap-2">
+                <span>📋</span>
+                매칭 후 절차
+              </h3>
+              <div className="space-y-2 text-sm text-[#666]">
+                <p className="flex items-start gap-2">
+                  <span className="shrink-0">1️⃣</span>
+                  <span>간병인과 채팅으로 세부사항 조율</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="shrink-0">2️⃣</span>
+                  <span>AI가 추천하는 케어 플랜 검토</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="shrink-0">3️⃣</span>
+                  <span>케어 시작 날짜 확정</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="shrink-0">4️⃣</span>
+                  <span>케어 진행 상황 모니터링</span>
+                </p>
+              </div>
             </div>
-          </div>
+          </>
         )}
-
-        {/* Action Section */}
-        <div style={styles.actionSection}>
-          <div style={styles.sectionTitle}>다음 단계</div>
-          <div style={styles.actionButtons}>
-            <button
-              style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
-              onClick={() => router.push('/care-plans-create-1')}
-            >
-              <span>📅</span>
-              AI 맞춤 케어 일정 만들기
-            </button>
-            <button
-              style={{...styles.actionBtn, ...styles.actionBtnSecondary}}
-              onClick={() => router.push('/mypage-message')}
-            >
-              <span>💬</span>
-              간병인과 채팅하기
-            </button>
-          </div>
-        </div>
-
-        {/* Info Card */}
-        <div style={styles.infoCard}>
-          <div style={styles.infoCardTitle}>📋 매칭 후 절차</div>
-          <div style={styles.infoBullet}>1️⃣ 간병인과 채팅으로 세부사항 조율</div>
-          <div style={styles.infoBullet}>2️⃣ AI가 추천하는 케어 플랜 검토</div>
-          <div style={styles.infoBullet}>3️⃣ 케어 시작 날짜 확정</div>
-          <div style={styles.infoBullet}>4️⃣ 케어 진행 상황 모니터링</div>
-        </div>
-      </div>
+      </main>
     </div>
-    </>
   )
 }

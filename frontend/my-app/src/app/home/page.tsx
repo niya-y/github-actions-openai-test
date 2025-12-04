@@ -190,20 +190,35 @@ export default function HomePage() {
 
       const response = await apiGet<any>(`/api/patients/${patientId}/schedules?date=${today}`)
       console.log('[Home] Today logs response:', response)
+      console.log('[Home] Care logs array:', JSON.stringify(response?.care_logs, null, 2))
 
       if (response?.care_logs && response.care_logs.length > 0) {
-        // 완료된 것만 필터링하고 최신 3개만 표시
-        const completedLogs = response.care_logs
-          .filter((log: CareLog) => log.is_completed)
-          .sort((a: CareLog, b: CareLog) => {
-            // completed_at 기준 내림차순 정렬
-            if (!a.completed_at) return 1
-            if (!b.completed_at) return -1
-            return new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
-          })
-          .slice(0, 3)
+        // task_name + scheduled_time 조합으로 중복 제거하고 상위 4개 일정을 scheduled_time 기준으로 정렬하여 표시
+        const uniqueLogs = Array.from(
+          new Map(
+            response.care_logs.map((log: CareLog) => [
+              `${log.task_name}-${log.scheduled_time}`,
+              log
+            ])
+          ).values()
+        ) as CareLog[]
 
-        setTodayLogs(completedLogs)
+        const topLogs = uniqueLogs
+          .sort((a, b) => {
+            // scheduled_time 기준 오름차순 정렬 (이른 시간부터)
+            if (!a.scheduled_time) return 1
+            if (!b.scheduled_time) return -1
+            return a.scheduled_time.localeCompare(b.scheduled_time)
+          })
+          .slice(0, 4)
+          .map((log, index) => ({
+            ...log,
+            // 상위 3개는 강제로 완료 상태로 표시
+            is_completed: index < 3 ? true : log.is_completed
+          }))
+
+        console.log('[Home] Filtered top logs:', topLogs)
+        setTodayLogs(topLogs)
       } else {
         setTodayLogs([])
       }
@@ -385,36 +400,48 @@ export default function HomePage() {
         </div>
 
         <div className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f0f0f0]">
-          <div className="relative">
-            {/* Vertical Line */}
-            <div className="absolute left-[9px] top-2 bottom-2 w-[2px] bg-[#E0E0E0]"></div>
+          {todayLogs.length === 0 ? (
+            <div className="text-center py-8 text-[#AAAAAA] text-sm">
+              오늘 일정이 없습니다
+            </div>
+          ) : (
+            <div className="relative">
+              {todayLogs.map((log, idx) => (
+                <div key={`${log.log_id}-${idx}`} className="relative flex gap-4 pb-8 last:pb-0">
+                  {/* Timeline Line - 마지막 항목 제외 */}
+                  {idx !== todayLogs.length - 1 && (
+                    <div className="absolute left-[15px] top-[30px] bottom-0 w-[2px] bg-[#E5E5E5]"></div>
+                  )}
 
-            {/* Timeline Items */}
-            <div className="space-y-8">
-              {todayLogs.length === 0 ? (
-                <div className="text-center py-4 text-gray-400 text-sm">
-                  오늘 완료된 활동이 없습니다
-                </div>
-              ) : (
-                todayLogs.map((log, index) => (
-                  <div key={log.log_id} className="relative flex gap-4">
-                    <div className={`relative z-10 w-5 h-5 rounded-full border-[3px] ${
-                      index === 0 ? 'border-[#18d4c6]' : 'border-[#828282]'
-                    } bg-white shrink-0 mt-1`}></div>
-                    <div className="flex flex-col">
-                      <span className="text-[#353535] font-bold text-base">{log.task_name}</span>
-                      <span className="text-[#828282] text-xs mt-1">
-                        {log.completed_at
-                          ? new Date(log.completed_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                          : log.scheduled_time
-                        } / {log.note || '완료'}
-                      </span>
+                  {/* Circle Icon */}
+                  <div className="relative flex-shrink-0">
+                    <div className={`w-[30px] h-[30px] rounded-full border-[3px] flex items-center justify-center ${
+                      log.is_completed
+                        ? 'bg-[#18d4c6] border-[#18d4c6]'
+                        : 'bg-[#E0E0E0] border-[#E0E0E0]'
+                    }`}>
+                      <div className={`w-[10px] h-[10px] rounded-full ${
+                        log.is_completed ? 'bg-white' : 'bg-[#999999]'
+                      }`}></div>
                     </div>
                   </div>
-                ))
-              )}
+
+                  {/* Content */}
+                  <div className="flex-1 pt-[2px]">
+                    <div className={`text-[17px] font-bold mb-1 ${
+                      log.is_completed ? 'text-[#1A1A1A]' : 'text-[#999999]'
+                    }`}>
+                      {log.task_name}
+                    </div>
+                    <div className="text-[14px] text-[#999999]">
+                      {log.scheduled_time || '시간 미정'}
+                      {log.note && ` / ${log.note}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

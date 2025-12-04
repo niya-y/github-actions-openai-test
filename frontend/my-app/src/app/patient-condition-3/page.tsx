@@ -310,10 +310,10 @@ export default function PatientCondition3Page() {
 
             <div className="flex flex-wrap gap-2 mb-3">
               {allergyFoods.map((food, index) => (
-                <div key={index} className="inline-flex items-center gap-2 bg-red-100 text-red-900 px-3 py-2 rounded-full text-[14px]">
+                <div key={index} className="inline-flex items-center gap-1 bg-red-100 text-red-900 px-2 py-1 rounded-full text-[12px] border border-red-300">
                   <span>{food}</span>
                   <span
-                    className="cursor-pointer font-bold text-lg leading-none"
+                    className="cursor-pointer font-bold text-sm leading-none text-[#a0a0a0] hover:text-[#606060]"
                     onClick={() => handleRemoveAllergy(index)}
                   >
                     ×
@@ -323,7 +323,7 @@ export default function PatientCondition3Page() {
             </div>
 
             {/* Restricted Food Input */}
-            <div className="space-y-2 mt-4">
+            <div className="space-y-2 mt-4 mb-3">
               <label className="text-lg font-bold text-[#353535]">식이 제한 음식</label>
               <input
                 name="currentRestriction"
@@ -338,10 +338,10 @@ export default function PatientCondition3Page() {
 
             <div className="flex flex-wrap gap-2 mb-6">
               {restrictionFoods.map((food, index) => (
-                <div key={index} className="inline-flex items-center gap-2 bg-orange-100 text-orange-900 px-3 py-2 rounded-full text-[14px]">
+                <div key={index} className="inline-flex items-center gap-1 bg-orange-100 text-orange-900 px-2 py-1 rounded-full text-[12px] border border-orange-300">
                   <span>{food}</span>
                   <span
-                    className="cursor-pointer font-bold text-lg leading-none"
+                    className="cursor-pointer font-bold text-sm leading-none text-[#a0a0a0] hover:text-[#606060]"
                     onClick={() => handleRemoveRestriction(index)}
                   >
                     ×

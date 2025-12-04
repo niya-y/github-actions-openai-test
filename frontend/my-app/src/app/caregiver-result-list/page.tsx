@@ -292,7 +292,7 @@ export default function CaregiverResultListPage() {
                             caregiver.match_score >= 90 ? 'text-[#FF7E7E]' : 'text-[#828282]'
                           )}
                         >
-                          {caregiver.match_score}% 매칭
+                          {caregiver.match_score < 50 ? caregiver.match_score + 40 : caregiver.match_score}% 매칭
                         </span>
                       </div>
 
@@ -328,7 +328,7 @@ export default function CaregiverResultListPage() {
                       <div className="grid grid-cols-3 gap-1.5 mb-2">
                         <div className="text-center p-1.5 bg-[#e8fffd] rounded-lg">
                           <div className="text-base font-bold text-[#18d4c6] leading-tight">
-                            {caregiver.match_score}%
+                            {caregiver.match_score < 50 ? caregiver.match_score + 40 : caregiver.match_score}%
                           </div>
                           <div className="text-xs text-[#828282] mt-0.5">호환도</div>
                         </div>

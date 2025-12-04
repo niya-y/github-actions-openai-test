@@ -232,7 +232,18 @@ npm install
 
 # 개발 서버 시작
 npm run dev
+
+# 프로덕션 빌드 (Next.js 16 - webpack 사용)
+npm run build -- --webpack
+
+# 빌드된 앱 실행
+npm run start
 ```
+
+> **⚠️ Next.js 16 빌드 주의사항**
+>
+> 이 프로젝트는 Next.js 16.0.3을 사용하며, webpack 최적화 설정이 포함되어 있습니다.
+> 빌드 시 반드시 `--webpack` 플래그를 사용해야 합니다.
 
 기본적으로 다음 주소에서 실행됩니다:
 
