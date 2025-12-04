@@ -36,7 +36,6 @@ export async function apiPost<T>(url: string, body: any, options?: { includeAuth
             method: 'POST',
             headers,
             body: isFormData ? body : JSON.stringify(body),
-            credentials: 'include',
             mode: 'cors',
             signal: controller.signal,
         });
@@ -95,7 +94,6 @@ export async function apiGet<T>(url: string): Promise<T> {
         const response = await fetch(`${BASE_URL}${url}`, {
             method: 'GET',
             headers,
-            credentials: 'include',
             mode: 'cors',
             signal: controller.signal,
         });
@@ -155,7 +153,6 @@ export async function apiPut<T>(url: string, body: any): Promise<T> {
             method: 'PUT',
             headers,
             body: JSON.stringify(body),
-            credentials: 'include',
             mode: 'cors',
             signal: controller.signal,
         });
@@ -210,7 +207,6 @@ export async function apiDelete<T>(url: string): Promise<T> {
         const response = await fetch(`${BASE_URL}${url}`, {
             method: 'DELETE',
             headers,
-            credentials: 'include',
             mode: 'cors',
             signal: controller.signal,
         });
