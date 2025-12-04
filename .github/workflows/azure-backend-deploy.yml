@@ -17,20 +17,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
       - name: Create deployment package
         run: |
           cd backend
-          zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "venv/*" -x "antenv/*" -x ".venv/*"
+          zip -r ../app.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "venv/*" -x "antenv/*"
       
-      - name: Deploy to Azure with build
+      - name: Deploy to Azure
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: app.zip
-          type: zip
