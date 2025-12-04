@@ -71,7 +71,7 @@ export default function PatientCondition1Page() {
 
           if (selectedPatientId) {
             // selectedPatientId가 있으면 그 환자 선택
-            patientToDisplay = patientsList.find(p => p.patient_id === parseInt(selectedPatientId)) || null
+            patientToDisplay = patientsList.find((p: any) => p.patient_id === parseInt(selectedPatientId)) || null
             console.log('[PatientCondition1] Selected patient from sessionStorage:', patientToDisplay)
           }
 
