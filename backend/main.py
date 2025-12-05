@@ -22,7 +22,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:4000",
         "https://happy-hill-0c145d200.3.azurestaticapps.net",
-        "https://nbcare.vercel.app"
+        "https://nbcare.vercel.app",
+        "https://neulbomcare-web.purplecliff-dc92193b.koreacentral.azurecontainerapps.io",
     ],
     allow_credentials=True,
     allow_methods=["*"],
