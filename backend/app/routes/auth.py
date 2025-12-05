@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.security import create_access_token, verify_password
 from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user
-from app.models.user import User
+from app.models.user import User, SocialAccount, SocialProviderEnum, UserTypeEnum
 from app.schemas.user import UserResponse
 
 
@@ -114,25 +114,43 @@ async def kakao_callback(code: str, db: Session = Depends(get_db)):
     nickname = profile.get("nickname")
     profile_image = profile.get("profile_image_url")
     
-    # 4. DB에서 사용자 찾기 또는 생성
-    user = db.query(User).filter(User.kakao_id == kakao_id).first()
-    
-    if user is None:
+    # 4. DB에서 소셜 계정으로 사용자 찾기 또는 생성
+    social_account = db.query(SocialAccount).filter(
+        SocialAccount.provider == SocialProviderEnum.kakao,
+        SocialAccount.provider_user_id == kakao_id
+    ).first()
+
+    if social_account is None:
         # 새 사용자 생성
         user = User(
-            kakao_id=kakao_id,
             email=email,
-            nickname=nickname,
-            profile_image=profile_image
+            name=nickname or "카카오 사용자",
+            profile_image_url=profile_image,
+            user_type=UserTypeEnum.guardian  # 기본값으로 보호자 설정
         )
         db.add(user)
+        db.flush()  # user_id 생성을 위해 flush
+
+        # 소셜 계정 연결
+        social_account = SocialAccount(
+            user_id=user.user_id,
+            provider=SocialProviderEnum.kakao,
+            provider_user_id=kakao_id,
+            access_token=access_token
+        )
+        db.add(social_account)
         db.commit()
         db.refresh(user)
     else:
         # 기존 사용자 정보 업데이트
-        user.email = email
-        user.nickname = nickname
-        user.profile_image = profile_image
+        user = social_account.user
+        if email:
+            user.email = email
+        if nickname:
+            user.name = nickname
+        if profile_image:
+            user.profile_image_url = profile_image
+        social_account.access_token = access_token
         db.commit()
         db.refresh(user)
     

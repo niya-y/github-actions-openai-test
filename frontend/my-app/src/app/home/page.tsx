@@ -327,16 +327,7 @@ export default function HomePage() {
         <h3 className="text-sm font-medium text-[#828282] mb-4">현재 돌봄 현황</h3>
 
         <div className="space-y-4">
-          {/* Alert Card */}
-          <div className="w-full bg-[#FFF0F0] rounded-[20px] p-5 flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200">
-            <div className="w-12 h-12 rounded-full border-2 border-[#FF6B6B] flex items-center justify-center bg-white shrink-0">
-              <span className="text-[#FF6B6B] text-2xl font-bold">!</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[#FF6B6B] font-bold text-lg">혈압 확인 필요</span>
-              <span className="text-[#FF6B6B] text-xs">평소보다 수치가 높습니다(135/82)</span>
-            </div>
-          </div>
+          
 
           {/* Caregiver Status Card */}
           {caregiver ? (

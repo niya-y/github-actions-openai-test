@@ -3,23 +3,24 @@
 파일 위치: backend/app/routes/care_reports.py
 
 프론트엔드에서 보낸 요청을 받아 PDF를 생성하고
-Azure Blob Storage에 업로드한 후 다운로드 URL을 반환합니다.
+직접 브라우저로 다운로드합니다.
 """
 from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel, Field
 import asyncio
 import logging
+import urllib.parse
 
 from app.dependencies.database import get_db
 from app.models.profile import Patient, Caregiver
-from app.models.matching import MatchingResult
+from app.models.matching import MatchingResult, MatchingRequest
 from app.models.care_execution import Schedule, CareLog
 from app.models.user import User
 from app.services.pdf_generator import pdf_generator
-from app.utils.azure_blob import get_azure_blob_service
 from app.dependencies.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -208,19 +209,21 @@ def get_care_report_data(
     
     logger.info(f"✅ 환자 조회: {patient.name} (ID: {patient_id})")
     
-    # 2. 활성 매칭에서 간병인 정보 조회
+    # 2. 활성 매칭에서 간병인 정보 조회 (MatchingRequest 조인 필요)
     active_matching = db.query(MatchingResult)\
+        .join(MatchingRequest, MatchingResult.request_id == MatchingRequest.request_id)\
         .filter(
-            MatchingResult.patient_id == patient_id,
+            MatchingRequest.patient_id == patient_id,
             MatchingResult.status == 'active'
         )\
         .order_by(MatchingResult.created_at.desc())\
         .first()
-    
+
     # 활성 매칭이 없으면 가장 최근 매칭 조회
     if not active_matching:
         active_matching = db.query(MatchingResult)\
-            .filter(MatchingResult.patient_id == patient_id)\
+            .join(MatchingRequest, MatchingResult.request_id == MatchingRequest.request_id)\
+            .filter(MatchingRequest.patient_id == patient_id)\
             .order_by(MatchingResult.created_at.desc())\
             .first()
     
@@ -285,7 +288,7 @@ def get_care_report_data(
 # API 엔드포인트
 # ============================================
 
-@router.post("/generate-pdf/{patient_id}", response_model=GeneratePDFResponse)
+@router.post("/generate-pdf/{patient_id}")
 async def generate_care_report_pdf(
     patient_id: int,
     request: GeneratePDFRequest,
@@ -403,7 +406,7 @@ async def generate_care_report_pdf(
             
             # 간병인 정보
             'caregiver_name': caregiver_user.name if caregiver_user else '간병인',
-            'caregiver_gender': '여' if caregiver_user and caregiver_user.gender == 'Female' else '남',
+            'caregiver_gender': '여',  # User 모델에 gender 필드 없음, 기본값 사용
             'caregiver_birth_date': '1980-01-01',  # TODO: 실제 생년월일 필드 추가 시 수정
             'caregiver_phone': caregiver_user.phone_number if caregiver_user else '010-0000-0000',
             
@@ -423,29 +426,21 @@ async def generate_care_report_pdf(
         
         # 7. PDF 생성 (비동기)
         pdf_bytes = await pdf_generator.generate_pdf(html_content)
-        
-        # 8. Azure Blob Storage 업로드
+
+        # 8. 파일명 설정 (한글 URL 인코딩)
         file_name = f"간병일지_{patient.name}_{start_date.replace('-', '')}.pdf"
-        blob_name = f"reports/patient_{patient_id}/{file_name}"
-        
-        _, sas_url = get_azure_blob_service().upload_pdf(
-            pdf_bytes=pdf_bytes,
-            blob_name=blob_name,
-            expiry_days=7  # 7일간 유효
-        )
-        
-        # 9. 만료 시간 계산
-        expires_at = (datetime.utcnow() + timedelta(days=7)).isoformat() + "Z"
-        
-        logger.info(f"✅ PDF 생성 완료 - {file_name}")
-        
-        # 10. 응답 반환
-        return GeneratePDFResponse(
-            success=True,
-            download_url=sas_url,
-            file_name=file_name,
-            expires_at=expires_at,
-            message="PDF가 성공적으로 생성되었습니다"
+        encoded_filename = urllib.parse.quote(file_name)
+
+        logger.info(f"✅ PDF 생성 완료 - {file_name} ({len(pdf_bytes)} bytes)")
+
+        # 9. PDF 직접 반환 (브라우저 다운로드)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
         )
         
     except ValueError as e:
@@ -483,7 +478,7 @@ async def health_check():
 async def test_pdf_generation():
     """
     PDF 생성 테스트 엔드포인트 (개발용)
-    
+
     실제 데이터 없이 샘플 데이터로 PDF 생성 테스트
     """
     sample_data = {
@@ -513,25 +508,30 @@ async def test_pdf_generation():
         'month': '01',
         'day': '02'
     }
-    
+
     try:
         # HTML 생성
         html = pdf_generator.generate_html(sample_data)
-        
+
         # PDF 생성
         pdf_bytes = await pdf_generator.generate_pdf(html)
-        
-        # Azure 업로드
-        blob_name = f"test/test_report_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
-        _, sas_url = get_azure_blob_service().upload_pdf(pdf_bytes, blob_name, expiry_days=1)
-        
-        return {
-            "success": True,
-            "message": "테스트 PDF 생성 성공",
-            "download_url": sas_url,
-            "size_bytes": len(pdf_bytes)
-        }
-        
+
+        # 파일명 설정
+        file_name = f"테스트_간병일지_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+        encoded_filename = urllib.parse.quote(file_name)
+
+        logger.info(f"✅ 테스트 PDF 생성 완료 - {file_name} ({len(pdf_bytes)} bytes)")
+
+        # PDF 직접 반환
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+
     except Exception as e:
         logger.error(f"❌ 테스트 실패: {e}")
         raise HTTPException(

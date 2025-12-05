@@ -1,5 +1,10 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// 디버깅: API URL 확인
+if (typeof window !== 'undefined') {
+    console.log('[API] BASE_URL:', BASE_URL);
+}
+
 export async function apiPost<T>(url: string, body: any, options?: { includeAuth?: boolean; headers?: Record<string, string> }): Promise<T> {
     const headers: any = {};
 

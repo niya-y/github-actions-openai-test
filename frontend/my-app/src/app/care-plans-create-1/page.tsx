@@ -12,7 +12,8 @@ export default function CarePlanCreate1Page() {
   useEffect(() => {
     const generatePlan = async () => {
       try {
-        const patientId = sessionStorage.getItem('patient_id')
+        // patient_id 또는 selected_patient_id 사용 (일관성 유지)
+        const patientId = sessionStorage.getItem('patient_id') || sessionStorage.getItem('selected_patient_id')
         const caregiverData = sessionStorage.getItem('selectedCaregiver')
         const careRequirementsStr = sessionStorage.getItem('care_requirements')
 
@@ -30,7 +31,14 @@ export default function CarePlanCreate1Page() {
           }
         }
 
-        let careRequirements = {
+        let careRequirements: {
+          care_type: string;
+          time_slots: string[];
+          gender: string;
+          skills: string[];
+          care_start_date?: string | null;
+          care_end_date?: string | null;
+        } = {
           care_type: "nursing-aide",
           time_slots: ["morning", "afternoon"],
           gender: "Female",
@@ -40,6 +48,7 @@ export default function CarePlanCreate1Page() {
         if (careRequirementsStr) {
           try {
             careRequirements = JSON.parse(careRequirementsStr)
+            console.log("[케어 요구사항] 날짜 포함:", careRequirements.care_start_date, "~", careRequirements.care_end_date)
           } catch (e) {
             console.error("케어 요구사항 파싱 오류", e)
           }
@@ -73,13 +82,16 @@ export default function CarePlanCreate1Page() {
         }
 
         console.log("AI 케어 플랜 생성 시작...")
+        console.log("[케어 플랜 생성] 날짜 정보:", careRequirements.care_start_date, "~", careRequirements.care_end_date)
 
-        // AI 생성 요청
+        // AI 생성 요청 (날짜 포함)
         await apiPost('/api/care-plans/generate', {
           patient_id: patientId ? parseInt(patientId) : 1,
           caregiver_id: caregiverId,
           patient_personality: patientPersonality,
-          care_requirements: careRequirements
+          care_requirements: careRequirements,
+          care_start_date: careRequirements.care_start_date || null,
+          care_end_date: careRequirements.care_end_date || null
         })
 
         console.log("AI 케어 플랜 생성 완료!")

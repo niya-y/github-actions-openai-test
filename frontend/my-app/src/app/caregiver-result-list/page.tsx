@@ -311,8 +311,8 @@ export default function CaregiverResultListPage() {
                       </button>
                     </div>
 
-                    {/* Back Side - Matching Reason */}
-                    <div className="flip-card-back px-4 pt-4 pb-3 flex flex-col gap-2">
+                    {/* Back Side - Matching Reason & AI Comment */}
+                    <div className="flip-card-back px-4 pt-4 pb-3 flex flex-col gap-1">
                       {/* Title */}
                       <div className="mb-1">
                         <h3 className="text-base font-bold text-[#353535] mb-1">매칭 근거</h3>
@@ -320,12 +320,24 @@ export default function CaregiverResultListPage() {
                       </div>
 
                       {/* Matching Reason Text */}
-                      <p className="text-xs text-[#353535] leading-snug line-clamp-3 mb-2">
+                      <p className="text-xs text-[#353535] leading-snug line-clamp-2 mb-1">
                         {caregiver.matching_reason || '최선의 돌봄을 제공할 것입니다.'}
                       </p>
 
+                      {/* AI Comment (personality_analysis) */}
+                      {caregiver.personality_analysis && (
+                        <div className="bg-[#f8f8f8] rounded-lg p-2 mb-1">
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="text-[10px] font-bold text-[#18d4c6]">AI 분석</span>
+                          </div>
+                          <p className="text-[11px] text-[#555] leading-snug line-clamp-2">
+                            {caregiver.personality_analysis}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Stats */}
-                      <div className="grid grid-cols-3 gap-1.5 mb-2">
+                      <div className="grid grid-cols-3 gap-1.5 mb-1">
                         <div className="text-center p-1.5 bg-[#e8fffd] rounded-lg">
                           <div className="text-base font-bold text-[#18d4c6] leading-tight">
                             {caregiver.match_score < 50 ? caregiver.match_score + 40 : caregiver.match_score}%

@@ -226,10 +226,10 @@ class PDFGenerator:
             page = await browser.newPage()
             
             # HTML 콘텐츠 로드
-            await page.setContent(
-                html_content, 
-                {'waitUntil': 'networkidle0'}  # 네트워크 요청 완료 대기
-            )
+            await page.setContent(html_content)
+
+            # 렌더링 완료 대기
+            await asyncio.sleep(0.5)
             
             # PDF 생성
             pdf_bytes = await page.pdf({

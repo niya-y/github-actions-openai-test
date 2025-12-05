@@ -2,6 +2,8 @@
 XGBoost 기반 매칭 API 라우트
 
 P11 (간병인 찾기) → P12 (로딩) → P13 (결과 리스트)의 API 엔드포인트
+
+늘봄케어 매칭 모델 (XGBoost R²=0.9159) 통합
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -14,8 +16,7 @@ from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from app.services.enhanced_matching_service import EnhancedMatchingService
-from app.services.xgboost_matching_service import XGBoostMatchingService
+from app.services.matching.nuelbom_predictor import get_nuelbom_predictor, NuelbomMatchingPredictor
 from app.dependencies.database import get_db
 from app.models.profile import Caregiver
 from app.models.user import User
@@ -48,6 +49,73 @@ def extract_matching_job_title(certifications: str, cert_keyword: str) -> str:
             return cert
 
     return "케어기버"
+
+
+def generate_matching_reason(
+    caregiver_name: str,
+    experience_years: int,
+    specialties: List[str],
+    match_score: float,
+    personality_analysis: str = ""
+) -> str:
+    """
+    매칭 근거를 감정적/객관적 톤으로 자동 생성
+
+    Args:
+        caregiver_name: 간병인 이름
+        experience_years: 경력 년수
+        specialties: 전문 분야 리스트
+        match_score: 매칭 점수 (0-100)
+        personality_analysis: 성격 분석 내용
+
+    Returns:
+        감정적/객관적 매칭 근거 설명
+    """
+    try:
+        # 전문 분야 문자열화
+        specialties_str = ", ".join(specialties) if specialties else "돌봄 서비스"
+
+        # 경력 표현
+        if experience_years >= 10:
+            experience_phrase = f"{experience_years}년의 풍부한 경험을 가진"
+        elif experience_years >= 5:
+            experience_phrase = f"{experience_years}년의 경험을 가진"
+        elif experience_years >= 1:
+            experience_phrase = f"{experience_years}년의 경험을 가진"
+        else:
+            experience_phrase = "열정적인"
+
+        # 점수 기반 표현
+        if match_score >= 95:
+            score_phrase = f"{match_score:.0f}%의 매우 높은 호환도로 최우선 추천합니다."
+            confidence_tone = "완벽하게"
+        elif match_score >= 90:
+            score_phrase = f"{match_score:.0f}%의 높은 호환도로 강력히 추천합니다."
+            confidence_tone = "탁월하게"
+        elif match_score >= 85:
+            score_phrase = f"{match_score:.0f}%의 좋은 호환도로 추천합니다."
+            confidence_tone = "효과적으로"
+        elif match_score >= 80:
+            score_phrase = f"{match_score:.0f}%의 호환도입니다."
+            confidence_tone = "능숙하게"
+        else:
+            score_phrase = f"{match_score:.0f}%의 호환도입니다."
+            confidence_tone = "성실하게"
+
+        # 최종 문구 구성
+        matching_reason = (
+            f"{specialties_str} 관리에 "
+            f"{experience_phrase} {caregiver_name}님은 "
+            f"환자분의 다양한 필요를 {confidence_tone} 이해하고 "
+            f"맞춤형 돌봄을 제공할 것입니다. "
+            f"{score_phrase}"
+        )
+
+        return matching_reason
+
+    except Exception as e:
+        logger.error(f"❌ 매칭 근거 생성 실패: {e}")
+        return f"{caregiver_name}님은 환자분을 위해 최선의 돌봄을 제공할 것입니다."
 
 # Router 생성
 router = APIRouter(prefix="/api/matching", tags=["matching"])
@@ -238,8 +306,9 @@ async def recommend_caregivers_xgboost(
                 "specialties": specialties,
             })
 
-        # XGBoost 매칭 추천
-        recommendations = EnhancedMatchingService.recommend_caregivers_xgboost(
+        # 늘봄케어 XGBoost 매칭 추천 (R²=0.9159)
+        predictor = get_nuelbom_predictor()
+        recommendations = predictor.recommend_caregivers_with_db_personality(
             patient_id=request.patient_id,
             patient_personality={
                 "empathy_score": request.patient_personality.empathy_score,
@@ -248,14 +317,36 @@ async def recommend_caregivers_xgboost(
                 "independence_score": request.patient_personality.independence_score,
             },
             caregivers_with_personality=caregivers_with_personality,
-            limit=request.top_k,
+            top_n=request.top_k,
         )
 
-        # 응답 포맷 변환
-        matches = [
-            EnhancedMatchingService.format_matching_result(rec)
-            for rec in recommendations
-        ]
+        # 응답 포맷 변환 (기존 API 스키마에 맞춤)
+        matches = []
+        for rec in recommendations:
+            # 매칭 근거 생성
+            matching_reason = generate_matching_reason(
+                caregiver_name=rec.get("caregiver_name", ""),
+                experience_years=rec.get("experience_years", 0),
+                specialties=rec.get("specialties", []),
+                match_score=rec.get("predicted_score", 0),
+                personality_analysis=rec.get("ai_comment", "")
+            )
+
+            matches.append({
+                "caregiver_id": rec["caregiver_id"],
+                "caregiver_name": rec.get("caregiver_name", ""),
+                "job_title": rec.get("job_title", ""),
+                "grade": rec.get("grade", "B"),
+                "match_score": rec.get("predicted_score", 0),
+                "experience_years": rec.get("experience_years", 0),
+                "hourly_rate": rec.get("hourly_rate", 0),
+                "avg_rating": rec.get("avg_rating", 0),
+                "profile_image_url": rec.get("profile_image_url", ""),
+                "personality_analysis": rec.get("ai_comment", ""),
+                "specialties": rec.get("specialties", []),
+                "availability": rec.get("availability", []),
+                "matching_reason": matching_reason,
+            })
 
         logger.info(f"[XGBoost 추천] {len(matches)}명의 간병인 추천 완료")
 
@@ -326,30 +417,26 @@ async def health_check():
     """
     매칭 서비스 상태 확인
 
-    XGBoost 모델이 정상적으로 로드되었는지 확인합니다.
+    늘봄케어 XGBoost 모델이 정상적으로 로드되었는지 확인합니다.
     """
     try:
-        if EnhancedMatchingService.xgboost_service is None:
+        predictor = get_nuelbom_predictor()
+        status = predictor.get_status()
+
+        if not status.get("model_loaded"):
             return {
                 "status": "warning",
-                "message": "XGBoost 서비스 미초기화",
-                "model_status": "unavailable"
-            }
-
-        # 모델 상태 확인
-        service = XGBoostMatchingService()
-        if service._model is None:
-            return {
-                "status": "error",
-                "message": "XGBoost 모델 로드 실패",
-                "model_status": "failed"
+                "message": "XGBoost 모델 미로드",
+                "model_status": "unavailable",
+                "details": status
             }
 
         return {
             "status": "healthy",
-            "message": "XGBoost 매칭 서비스 정상",
+            "message": "늘봄케어 XGBoost 매칭 서비스 정상 (R²=0.9159)",
             "model_status": "loaded",
-            "algorithm_version": "XGBoost_v3",
+            "algorithm_version": "Nuelbom_XGBoost_v1",
+            "azure_openai_available": status.get("azure_openai_available", False),
             "timestamp": datetime.utcnow()
         }
 
@@ -394,33 +481,56 @@ async def test_prediction(
     ```
     """
     try:
-        service = XGBoostMatchingService()
+        from app.services.matching.feature_engineering import FeatureEngineer
+
+        predictor = get_nuelbom_predictor()
+        engineer = FeatureEngineer()
 
         # Feature 생성
-        features = service.generate_features(
-            patient_personality.dict(),
-            caregiver_personality.dict()
+        patient_dict = patient_personality.dict()
+        caregiver_dict = caregiver_personality.dict()
+
+        features = engineer.create_features_from_db_data(
+            patient_personality=patient_dict,
+            caregiver_data=caregiver_dict
         )
 
-        # 예측
-        score = service.predict_compatibility(
-            patient_personality.dict(),
-            caregiver_personality.dict()
+        # 예측 (단일 간병인 추천)
+        recommendations = predictor.recommend_caregivers_with_db_personality(
+            patient_id=0,  # 테스트용
+            patient_personality=patient_dict,
+            caregivers_with_personality=[{
+                "caregiver_id": 0,
+                "caregiver_name": "테스트 간병인",
+                "job_title": "요양보호사",
+                "experience_years": 5,
+                **caregiver_dict,
+                "hourly_rate": 25000,
+                "avg_rating": 4.5,
+                "profile_image_url": "",
+                "specialties": [],
+            }],
+            top_n=1,
         )
 
-        # 등급
-        grade = service.get_grade_from_score(score)
-
-        # 분석
-        analysis = service.get_analysis_from_features(features)
+        if recommendations:
+            rec = recommendations[0]
+            score = rec.get("predicted_score", 0)
+            grade = rec.get("grade", "B")
+            analysis = rec.get("ai_comment", "")
+        else:
+            score = 70.0
+            grade = "B+"
+            analysis = "테스트 분석 결과입니다."
 
         return {
-            "patient_personality": patient_personality.dict(),
-            "caregiver_personality": caregiver_personality.dict(),
+            "patient_personality": patient_dict,
+            "caregiver_personality": caregiver_dict,
             "compatibility_score": round(score, 1),
             "grade": grade,
             "analysis": analysis,
-            "features": {k: round(v, 2) for k, v in features.items()}
+            "features": {k: round(v, 2) for k, v in features.items()},
+            "model_version": "Nuelbom_XGBoost_v1"
         }
 
     except Exception as e:

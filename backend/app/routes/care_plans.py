@@ -13,7 +13,7 @@ from app.models.profile import Patient, Caregiver, Guardian
 from app.models.user import User
 from app.models.care_execution import Schedule, CareLog, CareCategoryEnum, MealPlan
 from app.models.care_details import HealthCondition, Medication, DietaryPreference
-from app.models.matching import MatchingResult
+from app.models.matching import MatchingResult, MatchingRequest
 from app.services.care_plan_generation_service import CarePlanGenerationService
 from app.services.meal_recommendation import (
     MealRecommendationService,
@@ -113,6 +113,8 @@ class CarePlanGenerationRequest(BaseModel):
     caregiver_id: int = Field(..., description="간병인 ID")
     patient_personality: dict = Field(..., description="환자 성격 점수")
     care_requirements: dict = Field(..., description="돌봄 요구사항")
+    care_start_date: str | None = Field(None, description="간병 시작일 (YYYY-MM-DD)")
+    care_end_date: str | None = Field(None, description="간병 종료일 (YYYY-MM-DD)")
 
 
 @router.post("/generate")
@@ -182,32 +184,75 @@ async def generate_care_plan(
             User.user_id == caregiver.user_id
         ).first()
 
-        # 매칭 정보 조회 (계약 기간 확인)
-        matching = db.query(MatchingResult).filter(
-            MatchingResult.caregiver_id == request.caregiver_id
-        ).order_by(MatchingResult.created_at.desc()).first()
+        # 매칭 요청 정보 조회 (matching_requests 테이블에서 care_start_date, care_end_date, preferred_time_slots 조회)
+        matching_request = db.query(MatchingRequest).filter(
+            MatchingRequest.patient_id == request.patient_id,
+            MatchingRequest.is_active == True
+        ).order_by(MatchingRequest.created_at.desc()).first()
 
-        # 케어 기간 계산
+        if matching_request:
+            logger.info(f"📋 매칭 요청 조회 성공: request_id={matching_request.request_id}, "
+                       f"care_period={matching_request.care_start_date} ~ {matching_request.care_end_date}, "
+                       f"time_slots={matching_request.preferred_time_slots}")
+
+        # 매칭 결과 조회 (MatchingResult - request_id로 연결)
+        matching = None
+        if matching_request:
+            matching = db.query(MatchingResult).filter(
+                MatchingResult.request_id == matching_request.request_id,
+                MatchingResult.caregiver_id == request.caregiver_id
+            ).order_by(MatchingResult.created_at.desc()).first()
+
+        # 간병인으로만 조회 (폴백)
+        if not matching:
+            matching = db.query(MatchingResult).filter(
+                MatchingResult.caregiver_id == request.caregiver_id
+            ).order_by(MatchingResult.created_at.desc()).first()
+
+        # 케어 기간 계산 (우선순위: 1.matching_requests DB 2.요청 파라미터 3.기본값 7일)
         start_date_str = None
         end_date_str = None
-        if matching and matching.contract_start_date and matching.contract_end_date:
-            start_date_str = matching.contract_start_date.isoformat()
-            end_date_str = matching.contract_end_date.isoformat()
-            days_diff = (matching.contract_end_date - matching.contract_start_date).days + 1
-            logger.info(f"📅 매칭 계약 기간: {start_date_str} ~ {end_date_str} ({days_diff}일)")
+        preferred_time_slots = None
+
+        # 1. matching_requests 테이블에서 날짜 및 시간대 사용 (DB 우선)
+        if matching_request and matching_request.care_start_date and matching_request.care_end_date:
+            start_date_str = matching_request.care_start_date.isoformat()
+            end_date_str = matching_request.care_end_date.isoformat()
+            preferred_time_slots = matching_request.preferred_time_slots
+            days_diff = (matching_request.care_end_date - matching_request.care_start_date).days + 1
+            logger.info(f"📅 DB(matching_requests) 기간: {start_date_str} ~ {end_date_str} ({days_diff}일), 시간대: {preferred_time_slots}")
+        # 2. 프론트엔드에서 전달받은 날짜 사용 (폴백)
+        elif request.care_start_date and request.care_end_date:
+            start_date_str = request.care_start_date
+            end_date_str = request.care_end_date
+            start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            days_diff = (end_dt - start_dt).days + 1
+            logger.info(f"📅 프론트엔드 요청 기간: {start_date_str} ~ {end_date_str} ({days_diff}일)")
+        # 3. 기본값 7일
         else:
-            logger.warning("⚠️ 매칭 정보 또는 계약 기간이 없습니다. 기본 7일로 생성합니다.")
+            logger.warning("⚠️ 날짜 정보가 없습니다. 기본 7일로 생성합니다.")
+
+        # preferred_time_slots가 없으면 care_requirements에서 가져오기
+        if not preferred_time_slots and request.care_requirements:
+            preferred_time_slots = request.care_requirements.get('time_slots', ['morning', 'afternoon'])
 
         # 환자 정보 구성
         # 나이 계산 (birth_date에서)
         age = calculate_age(patient.birth_date) if patient.birth_date else 65
+
+        # 환자 상세 데이터 수집 (약물, 질병, 식이 정보)
+        patient_details = collect_patient_data(request.patient_id, db)
 
         patient_info = {
             "id": patient.patient_id,
             "name": patient_user.name if patient_user else "환자",
             "age": age,
             "condition": patient.care_level.value if patient.care_level else "일반",
-            "special_conditions": ""  # medical_conditions 필드가 없으므로 빈 문자열
+            "special_conditions": ", ".join(patient_details.get("health_conditions", [])),
+            "medications": patient_details.get("medications", []),
+            "health_conditions": patient_details.get("health_conditions", []),
+            "dietary_prefs": patient_details.get("dietary_prefs", {})
         }
 
         # 간병인 정보 구성
@@ -230,32 +275,55 @@ async def generate_care_plan(
             patient_personality=request.patient_personality,
             care_requirements=request.care_requirements,
             start_date=start_date_str,
-            end_date=end_date_str
+            end_date=end_date_str,
+            preferred_time_slots=preferred_time_slots
         )
 
         logger.info(f"[케어 플랜 생성 완료] 총 {len(care_plan.weekly_schedule)}일간의 일정 생성")
 
         # DB에 저장
+        saved_schedule_ids = []
         try:
             logger.info("[케어 플랜 저장 시작] DB에 스케줄 및 케어 로그 저장 중...")
+            logger.info(f"📊 매칭 ID: {matching.matching_id if matching else 'None'}")
 
-            # 오늘 날짜부터 시작
-            start_date = datetime.now().date()
+            # 시작일 결정 (요청받은 시작일 or 오늘)
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                logger.info(f"📅 요청받은 시작일 사용: {start_date}")
+            else:
+                start_date = datetime.now().date()
+                logger.info(f"📅 기본 시작일 사용 (오늘): {start_date}")
+
+            # 기존 pending_review 상태의 스케줄 삭제 (중복 방지)
+            existing_schedules = db.query(Schedule).filter(
+                Schedule.patient_id == request.patient_id,
+                Schedule.status == 'pending_review',
+                Schedule.care_date >= start_date
+            ).all()
+
+            if existing_schedules:
+                logger.info(f"🗑️ 기존 pending_review 스케줄 {len(existing_schedules)}개 삭제")
+                for sched in existing_schedules:
+                    db.delete(sched)
+                db.flush()
 
             # weekly_schedule의 각 day에 대해 반복
             for day_index, day_schedule in enumerate(care_plan.weekly_schedule):
                 care_date = start_date + timedelta(days=day_index)
 
-                # Schedule 생성
+                # Schedule 생성 (매칭 ID 연결)
                 schedule = Schedule(
                     patient_id=request.patient_id,
-                    matching_id=None,  # 매칭 ID는 선택사항
+                    matching_id=matching.matching_id if matching else None,
                     care_date=care_date,
                     is_ai_generated=True,
                     status="pending_review"
                 )
                 db.add(schedule)
                 db.flush()  # schedule_id를 얻기 위해 flush
+                saved_schedule_ids.append(schedule.schedule_id)
+                logger.info(f"📅 Schedule 생성: ID={schedule.schedule_id}, date={care_date}")
 
                 # 각 activity에 대한 CareLog 생성
                 # day_schedule과 activity는 Pydantic 모델이므로 속성으로 접근
@@ -321,20 +389,27 @@ async def generate_care_plan(
             # 트랜잭션 커밋 (try-except로 감싸서 부분 커밋 방지)
             try:
                 db.commit()
-                logger.info(f"[케어 플랜 저장 완료] 총 {len(care_plan.weekly_schedule)}개 일정 저장됨")
+                logger.info(f"✅ [케어 플랜 저장 완료] 총 {len(care_plan.weekly_schedule)}개 일정, Schedule IDs: {saved_schedule_ids}")
             except Exception as commit_error:
                 db.rollback()
                 logger.error(f"❌ 트랜잭션 커밋 실패: {str(commit_error)}")
+                saved_schedule_ids = []  # 저장 실패 표시
                 raise HTTPException(
                     status_code=500,
                     detail="케어 플랜 저장 중 데이터베이스 오류가 발생했습니다"
                 )
 
+        except HTTPException:
+            raise
         except Exception as e:
             db.rollback()
             logger.error(f"❌ 케어 플랜 DB 저장 실패: {e}")
-            # DB 저장 실패해도 응답은 계속 반환 (AI 생성은 성공했으므로)
-            logger.warning("경고: DB 저장에 실패했으나 AI 생성 결과는 반환합니다")
+            saved_schedule_ids = []  # 저장 실패 표시
+            # DB 저장 실패 시 에러 발생 (프론트엔드에 알림)
+            raise HTTPException(
+                status_code=500,
+                detail=f"케어 플랜 DB 저장 실패: {str(e)}"
+            )
 
         # ============================================
         # 🍽️ 추천 식단 생성 (AI 기반)
@@ -410,6 +485,8 @@ async def generate_care_plan(
         response_data = {
             "success": True,
             "data": care_plan.model_dump(),
+            "saved_schedule_ids": saved_schedule_ids,
+            "matching_id": matching.matching_id if matching else None,
             "message": "케어 플랜이 생성되었습니다."
         }
 
@@ -432,7 +509,7 @@ async def generate_care_plan(
 
 # 스케줄 상태 전환 규칙 정의
 VALID_STATUS_TRANSITIONS = {
-    'pending_review': ['under_review'],  # 케어 플랜 요청 시
+    'pending_review': ['under_review', 'confirmed'],  # 케어 플랜 요청 시 또는 바로 확정
     'under_review': ['reviewed', 'confirmed'],  # 검토 중 → 검토 완료 또는 확정
     'reviewed': ['confirmed'],  # 검토 완료 → 확정
     'confirmed': ['scheduled', 'cancelled'],  # 확정 → 스케줄 진행 또는 취소

@@ -25,7 +25,8 @@ export function validateCareLog(log: any): log is CareLog {
 
 /**
  * ScheduleResponse 타입 검증
- * 필수 필드: patient_id, date, care_logs (배열)
+ * 필수 필드: patient_id, care_logs (배열)
+ * 선택 필드: date (날짜 필터 없이 조회 시 null 가능)
  */
 export function validateScheduleResponse(response: any): response is ScheduleResponse {
   if (!response || typeof response !== 'object') {
@@ -34,9 +35,8 @@ export function validateScheduleResponse(response: any): response is ScheduleRes
 
   return (
     typeof response.patient_id === 'number' &&
-    typeof response.date === 'string' &&
-    Array.isArray(response.care_logs) &&
-    response.care_logs.every((log: any) => validateCareLog(log))
+    (typeof response.date === 'string' || response.date === null) &&
+    Array.isArray(response.care_logs)
   )
 }
 

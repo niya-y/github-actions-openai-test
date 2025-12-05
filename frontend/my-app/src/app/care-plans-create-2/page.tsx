@@ -2,41 +2,61 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { background, firstPrimary } from '../colors'
-import { apiGet, apiPost, apiPut } from '@/utils/api'
+import { apiGet, apiPut } from '@/utils/api'
 import ErrorAlert from '@/components/ErrorAlert'
-import type { CarePlansResponse, Schedule, MealPlan, CareLog, ScheduleResponse } from '@/types/api'
+import type { Schedule, CareLog, ScheduleResponse } from '@/types/api'
 import { validateScheduleResponse, validateCareLog, validateCareLogArray } from '@/types/guards'
+
+// 케어 플랜 요약 정보 인터페이스
+interface CarePlanSummary {
+  totalActivities: number
+  careDays: number
+}
+
+// 날짜 포맷 함수 (YYYY-MM-DD -> MM/DD (요일))
+const formatDateLabel = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  const days = ['일', '월', '화', '수', '목', '금', '토']
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const dayOfWeek = days[date.getDay()]
+  return `${month}/${day} (${dayOfWeek})`
+}
 
 export default function Screen9Schedule() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'schedule' | 'meal'>('schedule')
+  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [allSchedules, setAllSchedules] = useState<(Schedule & { care_date?: string })[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
   const [loading, setLoading] = useState(true)
-  const [mealLoading, setMealLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+  const [summary, setSummary] = useState<CarePlanSummary>({ totalActivities: 0, careDays: 0 })
 
   // 기본 활동 데이터 (API에서 데이터가 없을 경우 사용)
   const defaultActivities = [
-    { time: '07:00', title: '기상 도움', assignee: '👨‍⚕️ 간병인 김미숙' },
-    { time: '07:30', title: '아침 식사 준비', assignee: '👩 딸 박지은' },
-    { time: '08:00', title: '약 복용 확인', assignee: '👨‍⚕️ 간병인 김미숙', note: '⚠️ 아스피린 100mg, 메트포민 500mg' },
-    { time: '09:00', title: '가벼운 스트레칭', assignee: '👨‍⚕️ 간병인 김미숙' },
-    { time: '10:00', title: '산책 (날씨 좋을 시)', assignee: '👩 딸 박지은' },
-    { time: '12:00', title: '점심 식사 준비', assignee: '👨‍⚕️ 간병인 김미숙' }
+    { time: '07:00', title: '기상 도움', assignee: '간병인' },
+    { time: '07:30', title: '아침 식사 준비', assignee: '가족' },
+    { time: '08:00', title: '약 복용 확인', assignee: '간병인', note: '처방된 약물 확인 필요' },
+    { time: '09:00', title: '가벼운 스트레칭', assignee: '간병인' },
+    { time: '10:00', title: '산책 (날씨 좋을 시)', assignee: '가족' },
+    { time: '12:00', title: '점심 식사 준비', assignee: '간병인' }
   ]
 
   useEffect(() => {
-    if (activeTab === 'schedule') {
-      fetchCarePlans()
-    } else if (activeTab === 'meal') {
-      fetchMealPlan()
+    fetchCarePlans()
+  }, [])
+
+  // 선택된 날짜가 변경되면 해당 날짜의 스케줄만 필터링
+  useEffect(() => {
+    if (selectedDate && allSchedules.length > 0) {
+      const filtered = allSchedules.filter(s => s.care_date === selectedDate)
+      setSchedules(filtered)
     }
-  }, [activeTab])
+  }, [selectedDate, allSchedules])
 
   const fetchCarePlans = async () => {
-    const patientId = sessionStorage.getItem('patient_id')
+    const patientId = sessionStorage.getItem('patient_id') || sessionStorage.getItem('selected_patient_id')
     console.log('[CarePlans] fetchCarePlans called, patient_id:', patientId)
 
     if (!patientId) {
@@ -51,27 +71,22 @@ export default function Screen9Schedule() {
     setError(null)
 
     try {
-      // pending_review 상태의 스케줄 조회
-      const today = new Date().toISOString().split('T')[0]
-      const apiUrl = `/api/patients/${patientId}/schedules?date=${today}&status=pending_review`
+      const apiUrl = `/api/patients/${patientId}/schedules?status=pending_review`
       console.log('[CarePlans] Fetching from:', apiUrl)
 
       const response = await apiGet<ScheduleResponse>(apiUrl)
 
       console.log('[CarePlans] API Response:', response)
 
-      // 응답 검증 - 타입 가드 함수 사용
       if (!response) {
         throw new Error('서버에서 응답을 받지 못했습니다')
       }
 
-      // 응답 타입 검증
       if (!validateScheduleResponse(response)) {
         console.error('[CarePlans] Invalid response structure:', response)
         throw new Error('유효하지 않은 응답 구조입니다')
       }
 
-      // care_logs 배열 검증
       if (!validateCareLogArray(response.care_logs)) {
         console.log('[CarePlans] Invalid care_logs in response')
         setSchedules([])
@@ -86,16 +101,17 @@ export default function Screen9Schedule() {
         return
       }
 
-      // care_logs를 schedules 형식으로 변환 (모든 항목이 검증됨)
-      const convertedSchedules: Schedule[] = response.care_logs
+      // care_logs를 schedules 형식으로 변환 (날짜 포함)
+      const convertedSchedules: (Schedule & { care_date?: string })[] = response.care_logs
         .filter((log: CareLog) => validateCareLog(log))
         .map((log: CareLog) => ({
           schedule_id: log.schedule_id,
           title: log.task_name,
           start_time: log.scheduled_time || '00:00',
-          end_time: '00:00', // API에서 제공하지 않는 경우
+          end_time: '00:00',
           category: log.category || 'other',
-          is_completed: log.is_completed
+          is_completed: log.is_completed,
+          care_date: log.care_date
         }))
 
       if (convertedSchedules.length === 0) {
@@ -103,7 +119,28 @@ export default function Screen9Schedule() {
       }
 
       console.log('[CarePlans] Converted schedules:', convertedSchedules)
-      setSchedules(convertedSchedules)
+      setAllSchedules(convertedSchedules)
+
+      // 고유 날짜 추출 및 정렬
+      const uniqueDates = [...new Set(response.care_logs.map((log: CareLog) => log.care_date).filter(Boolean))] as string[]
+      uniqueDates.sort()
+      setAvailableDates(uniqueDates)
+
+      // 첫 번째 날짜를 기본 선택
+      if (uniqueDates.length > 0) {
+        setSelectedDate(uniqueDates[0])
+        const firstDaySchedules = convertedSchedules.filter(s => s.care_date === uniqueDates[0])
+        setSchedules(firstDaySchedules)
+      } else {
+        setSchedules(convertedSchedules)
+      }
+
+      // 요약 정보 업데이트
+      setSummary({
+        totalActivities: convertedSchedules.length,
+        careDays: uniqueDates.length || 7
+      })
+      console.log('[CarePlans] Summary updated:', { totalActivities: convertedSchedules.length, careDays: uniqueDates.length })
     } catch (err) {
       console.error('[CarePlans] 케어 플랜 조회 실패:', err)
       setError(err as Error)
@@ -113,33 +150,10 @@ export default function Screen9Schedule() {
     }
   }
 
-  const fetchMealPlan = async () => {
-    const patientId = sessionStorage.getItem('patient_id')
-    if (!patientId) {
-      setMealLoading(false)
-      return
-    }
-
-    setMealLoading(true)
-    setError(null)
-
-    try {
-      // 오늘 날짜로 점심 식단 생성 요청
-      const today = new Date().toISOString().split('T')[0]
-      const response = await apiPost<MealPlan>(
-        `/api/meal-plans/patients/${patientId}/generate`,
-        {
-          meal_date: today,
-          meal_type: 'lunch'
-        }
-      )
-      setMealPlan(response)
-    } catch (err) {
-      console.error('식단 추천 생성 실패:', err)
-      setError(err as Error)
-    } finally {
-      setMealLoading(false)
-    }
+  // 카테고리 이름에서 이모티콘 제거
+  const cleanCategory = (category: string): string => {
+    // 이모티콘 패턴 제거 (유니코드 이모티콘)
+    return category.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu, '').trim()
   }
 
   // 스케줄을 활동 형식으로 변환
@@ -147,39 +161,16 @@ export default function Screen9Schedule() {
     console.log('[CarePlans] getActivities called, schedules.length:', schedules.length)
     if (schedules.length > 0) {
       const activities = schedules.map(schedule => ({
-        time: schedule.start_time.slice(0, 5), // HH:MM 형식
+        time: schedule.start_time.slice(0, 5),
         title: schedule.title,
-        assignee: `👨‍⚕️ ${schedule.category}`,
-        note: schedule.is_completed ? '✅ 완료' : undefined
+        assignee: cleanCategory(schedule.category),
+        note: schedule.is_completed ? '완료' : undefined
       }))
       console.log('[CarePlans] Returning DB activities:', activities)
       return activities
     }
     console.log('[CarePlans] Returning default hardcoded activities')
     return defaultActivities
-  }
-
-  // 식사 유형 한글 변환
-  const getMealTypeKorean = (mealType: string) => {
-    const types: Record<string, string> = {
-      breakfast: '🌅 아침',
-      lunch: '☀️ 점심',
-      dinner: '🌙 저녁',
-      snack: '🍪 간식'
-    }
-    return types[mealType] || mealType
-  }
-
-  // 영양정보 파싱 (문자열 또는 객체 처리)
-  const parseNutritionInfo = (nutritionInfo: any) => {
-    if (typeof nutritionInfo === 'string') {
-      try {
-        return JSON.parse(nutritionInfo)
-      } catch {
-        return null
-      }
-    }
-    return nutritionInfo
   }
 
   const activities = getActivities()
@@ -195,9 +186,7 @@ export default function Screen9Schedule() {
           <div className="flex flex-col items-start ml-5 gap-1">
             <span className="text-[#353535] text-[28px] font-bold mr-[113px]">케어 플랜</span>
             <span className="text-[#828282] text-base font-bold">
-              {activeTab === 'schedule'
-                ? 'AI가 생성한 7일 간병 일정입니다.'
-                : 'AI가 환자 맞춤 식단을 추천합니다.'}
+              AI가 생성한 {summary.careDays}일 간병 일정입니다.
             </span>
           </div>
 
@@ -214,127 +203,93 @@ export default function Screen9Schedule() {
                 className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
                 style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
               >
-                <span className="text-[#18D4C6] font-bold">{schedules.length > 0 ? schedules.length : 42}개</span>
+                <span className="text-[#18D4C6] font-bold">{schedules.length > 0 ? schedules.length : '-'}개</span>
+              </button>
+              <span className="text-[#828282] text-xs font-bold">오늘 활동</span>
+            </div>
+
+            <div className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
+                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
+              >
+                <span className="text-[#18D4C6] font-bold">{summary.careDays > 0 ? `${summary.careDays}일` : '-'}</span>
+              </button>
+              <span className="text-[#828282] text-xs font-bold">케어 기간</span>
+            </div>
+
+            <div className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
+                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
+              >
+                <span className="text-[#18D4C6] font-bold">{summary.totalActivities > 0 ? `${summary.totalActivities}개` : '-'}</span>
               </button>
               <span className="text-[#828282] text-xs font-bold">총 활동</span>
             </div>
-
-            <div className="flex flex-1 flex-col items-center gap-0.5">
-              <button
-                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
-                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
-              >
-                <span className="text-[#18D4C6] font-bold">4명</span>
-              </button>
-              <span className="text-[#828282] text-xs font-bold">참여 인원</span>
-            </div>
-
-            <div className="flex flex-1 flex-col items-center gap-0.5">
-              <button
-                className="flex flex-col items-center self-stretch text-left py-[18px] rounded-[50px] border-0"
-                style={{ background: "linear-gradient(180deg, #F2FFFE, #FFF4F4)" }}
-              >
-                <span className="text-[#18D4C6] font-bold">6시간</span>
-              </button>
-              <span className="text-[#828282] text-xs font-bold">일일 평균</span>
-            </div>
           </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex items-start self-stretch mb-3 gap-2">
-          <button
-            className={`flex flex-1 flex-col items-center text-left py-3.5 rounded-lg border border-solid ${
-              activeTab === 'schedule'
-                ? 'bg-[#E8FFFD] border-[#18D4C6]'
-                : 'bg-white border-[#828282]'
-            }`}
-            onClick={() => setActiveTab('schedule')}
-          >
-            <span className={`text-base font-bold ${activeTab === 'schedule' ? 'text-[#353535]' : 'text-[#828282]'}`}>
-              주간
-            </span>
-          </button>
-          <button
-            className={`flex flex-1 flex-col items-center text-left py-3.5 rounded-lg border border-solid ${
-              activeTab === 'meal'
-                ? 'bg-[#E8FFFD] border-[#18D4C6]'
-                : 'bg-white border-[#828282]'
-            }`}
-            onClick={() => setActiveTab('meal')}
-          >
-            <span className={`text-base font-bold ${activeTab === 'meal' ? 'text-[#353535]' : 'text-[#828282]'}`}>
-              추천 식단
-            </span>
-          </button>
+        {/* Date Toggle Buttons */}
+        <div className="flex items-start self-stretch mb-3 gap-2 overflow-x-auto pb-2">
+          {availableDates.length > 0 ? (
+            availableDates.map((date) => (
+              <button
+                key={date}
+                className={`flex shrink-0 flex-col items-center text-left py-3 px-4 rounded-lg border border-solid ${
+                  selectedDate === date
+                    ? 'bg-[#E8FFFD] border-[#18D4C6]'
+                    : 'bg-white border-[#828282]'
+                }`}
+                onClick={() => setSelectedDate(date)}
+              >
+                <span className={`text-sm font-bold whitespace-nowrap ${selectedDate === date ? 'text-[#353535]' : 'text-[#828282]'}`}>
+                  {formatDateLabel(date)}
+                </span>
+              </button>
+            ))
+          ) : (
+            <button
+              className="flex flex-1 flex-col items-center text-left py-3.5 rounded-lg border border-solid bg-[#E8FFFD] border-[#18D4C6]"
+            >
+              <span className="text-base font-bold text-[#353535]">전체</span>
+            </button>
+          )}
         </div>
 
-        {/* Content Section */}
-        {activeTab === 'schedule' ? (
-          <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-[19px] mb-9 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
-            <span className="text-[#353535] text-base font-bold mb-[11px] ml-5">월요일 일정</span>
+        {/* Schedule Content */}
+        <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-[19px] mb-9 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
+          <span className="text-[#353535] text-base font-bold mb-[11px] ml-5">
+            {selectedDate ? formatDateLabel(selectedDate) : '일정'}
+          </span>
 
-            {/* Divider */}
-            <img
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1'%3E%3Cline x1='0' y1='0' x2='100' y2='0' stroke='%23E0E0E0' stroke-width='1'/%3E%3C/svg%3E"
-              className="self-stretch h-[1px] mb-[17px] ml-[19px] object-fill"
-            />
+          {/* Divider */}
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1'%3E%3Cline x1='0' y1='0' x2='100' y2='0' stroke='%23E0E0E0' stroke-width='1'/%3E%3C/svg%3E"
+            className="self-stretch h-[1px] mb-[17px] ml-[19px] object-fill"
+          />
 
-            {/* Activities List */}
-            {loading ? (
-              <div className="w-full text-center py-8 text-[#828282]">케어 플랜을 불러오는 중...</div>
-            ) : (
-              activities.map((activity, index) => (
-                <div key={index} className="flex items-center self-stretch bg-[#F8F8F8] mb-2 ml-5 gap-[17px] rounded-[5px]">
-                  <div className="bg-[#18D4C6] w-[5px] h-[62px] rounded-tl-[5px] rounded-bl-[5px]"></div>
-                  <div className="flex shrink-0 items-center gap-[19px]">
-                    <span className="text-[#18D4C6] text-lg font-bold">{activity.time}</span>
-                    <div className="flex flex-col shrink-0 items-start">
-                      <span className="text-[#353535] text-base font-bold">{activity.title}</span>
-                      <span className="text-[#828282] text-xs">
-                        {activity.assignee}
-                        {activity.note && ` - ${activity.note}`}
-                      </span>
-                    </div>
+          {/* Activities List */}
+          {loading ? (
+            <div className="w-full text-center py-8 text-[#828282]">케어 플랜을 불러오는 중...</div>
+          ) : (
+            activities.map((activity, index) => (
+              <div key={index} className="flex items-center self-stretch bg-[#F8F8F8] mb-2 ml-5 gap-[17px] rounded-[5px]">
+                <div className="bg-[#18D4C6] w-[5px] h-[62px] rounded-tl-[5px] rounded-bl-[5px]"></div>
+                <div className="flex shrink-0 items-center gap-[19px]">
+                  <span className="text-[#18D4C6] text-lg font-bold">{activity.time}</span>
+                  <div className="flex flex-col shrink-0 items-start">
+                    <span className="text-[#353535] text-base font-bold">{activity.title}</span>
+                    {/* <span className="text-[#828282] text-xs">
+                      {activity.assignee}
+                      {activity.note && ` - ${activity.note}`}
+                    </span> */}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-5 mb-9 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
-            {mealLoading ? (
-              <div className="w-full text-center py-8 text-[#828282]">🤖 AI가 맞춤 식단을 생성하고 있습니다...</div>
-            ) : mealPlan ? (
-              <>
-                <span className="text-[#353535] text-lg font-bold mb-3 ml-5">추천 식단</span>
-                <div className="text-[#353535] text-base font-bold mb-[11px] ml-5">{mealPlan.menu_name}</div>
-                {mealPlan.ingredients && (
-                  <div className="text-[#828282] text-xs ml-5 mb-3">
-                    <span className="font-bold">재료:</span> {mealPlan.ingredients}
-                  </div>
-                )}
-                {mealPlan.nutrition_info && (
-                  <div className="text-[#828282] text-xs ml-5 mb-3">
-                    <span className="font-bold">영양 정보:</span>{' '}
-                    칼로리 {mealPlan.nutrition_info.calories || 'N/A'}kcal,
-                    단백질 {mealPlan.nutrition_info.protein_g || 'N/A'}g,
-                    탄수화물 {mealPlan.nutrition_info.carbs_g || 'N/A'}g,
-                    지방 {mealPlan.nutrition_info.fat_g || 'N/A'}g
-                  </div>
-                )}
-                {mealPlan.cooking_tips && (
-                  <div className="bg-[#F8F8F8] mx-5 p-3 rounded-lg mb-3">
-                    <div className="text-[#18D4C6] text-sm font-bold mb-2">💡 왜 이 식단이 좋은가요?</div>
-                    <div className="text-[#353535] text-xs whitespace-pre-line">{mealPlan.cooking_tips}</div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="w-full text-center py-8 text-[#828282]">식단 정보가 없습니다.</div>
-            )}
-          </div>
-        )}
+              </div>
+            ))
+          )}
+        </div>
 
         {/* Expert Opinion Section */}
         <div className="flex flex-col items-start self-stretch bg-white py-[19px] pr-5 rounded-lg" style={{ boxShadow: "0px 1px 4px #00000040" }}>
@@ -355,13 +310,12 @@ export default function Screen9Schedule() {
               className="flex flex-1 flex-col items-center bg-[#18D4C6] text-left py-[11px] rounded-lg border border-solid border-[#18D4C6]"
               onClick={async () => {
                 try {
-                  const patientId = sessionStorage.getItem('patient_id')
+                  const patientId = sessionStorage.getItem('patient_id') || sessionStorage.getItem('selected_patient_id')
                   if (!patientId) {
                     alert('환자 정보를 찾을 수 없습니다.')
                     return
                   }
 
-                  // status를 under_review로 업데이트
                   await apiPut('/api/care-plans/schedules/status', {
                     patient_id: parseInt(patientId),
                     status: 'under_review'

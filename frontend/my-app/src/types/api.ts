@@ -228,6 +228,7 @@ export interface DietaryConstraintsResponse {
 export interface CareLog {
   log_id?: number;
   schedule_id: number;
+  care_date?: string;  // YYYY-MM-DD 형식 (백엔드 API 응답에 포함)
   task_name: string;
   category: string;
   scheduled_time: string | null;
@@ -236,10 +237,10 @@ export interface CareLog {
   note?: string;
 }
 
-// 스케줄 응답 (환자의 특정 날짜 스케줄 조회)
+// 스케줄 응답 (환자의 스케줄 조회)
 export interface ScheduleResponse {
   patient_id: number;
-  date: string;
+  date: string | null;  // 날짜 필터 없이 조회 시 null
   care_logs: CareLog[];
   status?: string;
   total_count?: number;
